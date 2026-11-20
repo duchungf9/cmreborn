@@ -1,0 +1,16 @@
+# Original commercial game binaries and archives
+*.zip
+*.xapk
+*.exe
+# Extracted or converted game data
+*.blend
+*.fbx
+*.glb
+*.bin
+*.gif
+*.png
+# Local-only source files and generated workspaces
+/originals/
+/private/
+/work/
+/outputs/

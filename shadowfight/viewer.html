@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#11151b">
+  <title>SF2 Animation Viewer</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101319;--panel:#181d25;--panel2:#202733;--line:#303946;--text:#f2f4f7;--muted:#9da8b6;--accent:#f6a45d;--mint:#78dec6;--radius:14px}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,select{font:inherit;color:inherit}button{cursor:pointer}.app{height:100dvh;min-height:620px;display:grid;grid-template-rows:58px 1fr}
+    header{display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid var(--line);background:#13171e}.mark{width:34px;height:34px;border-radius:10px;background:#f6a45d20;color:var(--accent);display:grid;place-items:center;font-weight:800}.title{font-weight:750;letter-spacing:.01em}.sub{color:var(--muted);font-size:12px;margin-left:3px}.topright{margin-left:auto;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}.badge{padding:5px 9px;border:1px solid var(--line);border-radius:99px}
+    .layout{min-height:0;display:grid;grid-template-columns:310px minmax(0,1fr)}.sidebar{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--line);background:#141820}.sidehead{padding:16px 14px 12px;border-bottom:1px solid var(--line)}.sidehead label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 7px}.select,.search{width:100%;height:39px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:0 11px;outline:none}.select:focus,.search:focus{border-color:var(--accent)}.searchrow{position:relative;margin-top:9px}.search{padding-left:34px}.searchicon{position:absolute;left:11px;top:9px;color:#7f8b99}.count{padding:10px 14px 7px;color:var(--muted);font-size:12px}.cliplist{overflow:auto;min-height:0;padding:0 7px 10px}.clip{width:100%;border:0;text-align:left;display:flex;align-items:center;gap:10px;padding:9px 9px;border-radius:8px;background:transparent;color:#d8dee7}.clip:hover{background:#ffffff0b}.clip.active{background:#f6a45d20;color:#ffd1a2}.clip .dot{width:7px;height:7px;flex:none;border-radius:50%;background:#556170}.clip.active .dot{background:var(--accent);box-shadow:0 0 8px #f6a45d99}.clipname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.clipmeta{color:#84909f;font-size:11px;flex:none}
+    main{min-width:0;min-height:0;display:flex;flex-direction:column;padding:18px 20px 14px;gap:13px}.toolbar{display:flex;align-items:center;gap:10px;min-height:40px}.cliptitle{font-size:18px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.toolbar .tag{border:1px solid var(--line);border-radius:7px;color:var(--muted);font-size:11px;padding:4px 7px}.toolbar .spacer{flex:1}.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;height:34px;padding:0 11px}.btn:hover{border-color:#798392}.btn.primary{background:var(--accent);border-color:var(--accent);color:#1c1713;font-weight:750;min-width:78px}.btn:disabled{opacity:.4;cursor:default}.stage{position:relative;flex:1;min-height:260px;overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);background:radial-gradient(ellipse at 50% 47%,#202833 0,#141923 48%,#11151b 100%)}canvas{width:100%;height:100%;display:block}.stagebadge{position:absolute;left:14px;top:12px;color:#b2bdca;background:#11151bd9;border:1px solid #ffffff16;border-radius:7px;padding:5px 8px;font-size:11px}.hint{position:absolute;right:13px;top:12px;color:#8f9cac;font-size:11px}.loading{position:absolute;inset:0;display:grid;place-items:center;background:#11151b80;color:#d7dee8}.transport{display:grid;grid-template-columns:auto minmax(120px,1fr) auto auto auto;align-items:center;gap:12px;padding:0 2px}.time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;min-width:98px}.scrub{width:100%;accent-color:var(--accent)}.speed{height:32px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}.fps{color:var(--muted);font-size:12px;min-width:55px;text-align:right}.note{border-top:1px solid var(--line);padding-top:10px;color:#8d98a6;font-size:11px;display:flex;justify-content:space-between;gap:20px}.note strong{color:#b6c0cc;font-weight:600}.error{color:#ff9a91}
+    @media(max-width:850px){.layout{grid-template-columns:245px minmax(0,1fr)}main{padding:13px}.topright .badge:last-child{display:none}}
+    @media(max-width:620px){.app{height:auto;min-height:100dvh;grid-template-rows:55px auto}.layout{grid-template-columns:1fr;grid-template-rows:220px minmax(420px,1fr)}.sidebar{border-right:0;border-bottom:1px solid var(--line)}.sidehead{padding:10px 12px}.cliplist{display:flex;overflow:auto;gap:5px;padding:0 8px 9px}.clip{width:auto;min-width:max-content;padding:7px 9px}.clipmeta{display:none}.count{padding:7px 12px}.topright .badge{display:none}.transport{gap:7px}.time{min-width:86px;font-size:11px}.hint{display:none}.note{display:block}.note span{display:block;margin-top:4px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header><div class="mark">SF2</div><div class="title">Animation Viewer</div><div class="sub">thư viện chuyển động</div><div class="topright"><span class="badge" id="loaded">Đang nạp dữ liệu…</span><span class="badge">rig xem trước</span></div></header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidehead"><label for="collection">Bộ animation</label><select class="select" id="collection"><option value="human">Nhân vật · 498 clip</option><option value="effects">Hiệu ứng / projectile · 62 clip</option></select><div class="searchrow"><span class="searchicon">⌕</span><input class="search" id="search" type="search" placeholder="Tìm clip…" autocomplete="off"></div></div>
+      <div class="count" id="count">Đang đọc danh sách…</div><div class="cliplist" id="cliplist"></div>
+    </aside>
+    <main>
+      <div class="toolbar"><div class="cliptitle" id="cliptitle">Đang nạp animation</div><span class="tag" id="frames">—</span><span class="spacer"></span><button class="btn" id="prev" title="Clip trước">←</button><button class="btn primary" id="play">Tạm dừng</button><button class="btn" id="next" title="Clip tiếp">→</button></div>
+      <div class="stage" id="stage"><canvas id="view" aria-label="Khung xem animation"></canvas><div class="stagebadge" id="modebadge">SF2 32-bone rig</div><div class="hint">Canvas xem rig · kéo timeline để tua</div><div class="loading" id="loading">Đang tải bộ xương và keyframe…</div></div>
+      <div class="transport"><div class="time"><span id="current">0:00.00</span> / <span id="duration">0:00.00</span></div><input class="scrub" id="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Tua animation"><select class="speed" id="speed" aria-label="Tốc độ"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select><div class="fps" id="fps">20 fps</div></div>
+      <div class="note"><span><strong>Đang xem rig chuyển động:</strong> asset game không kèm mesh/skin gắn vào bộ xương này, nên khung vẽ hiển thị các xương và khớp để xem rõ từng clip.</span><span id="source">498 clip người · 62 clip hiệu ứng</span></div>
+    </main>
+  </div>
+</div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('view'), ctx = canvas.getContext('2d');
+  const state = {kind:'human',sets:{},clipIndex:0,clip:null,playing:true,time:0,duration:1,last:0,drag:false,manifest:{human:new Map(),effects:new Map()},bones:[],points:[],dpr:1};
+  const paths={human:'sf2_all_humanoid_animations.glb',effects:'sf2_non_humanoid_point_animations.glb'};
+  const quatIdentity=[0,0,0,1];
+  function parseGLB(buffer){
+    const dv=new DataView(buffer); if(dv.getUint32(0,true)!==0x46546c67) throw Error('File không phải GLB');
+    let off=12,json=null,bin=null;
+    while(off<dv.byteLength){const n=dv.getUint32(off,true),type=dv.getUint32(off+4,true);off+=8;const bytes=buffer.slice(off,off+n);if(type===0x4e4f534a)json=JSON.parse(new TextDecoder().decode(bytes).replace(/\0+$/,''));else if(type===0x004e4942)bin=bytes;off+=n;}
+    return {json,bin};
+  }
+  async function loadSet(kind){
+    if(state.sets[kind]) return state.sets[kind];
+    const res=await fetch(paths[kind]); if(!res.ok) throw Error('Không tải được '+paths[kind]);
+    const parsed=parseGLB(await res.arrayBuffer()); const gltf=parsed.json, bin=parsed.bin, nodes=gltf.nodes||[];
+    const parents=nodes.map(()=>-1); nodes.forEach((n,i)=>(n.children||[]).forEach(c=>parents[c]=i));
+    const accessors=new Map();
+    function accessor(index){
+      if(accessors.has(index))return accessors.get(index);
+      const a=gltf.accessors[index],v=gltf.bufferViews[a.bufferView],ncomp=({SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16})[a.type],bytes=({5126:4,5123:2,5125:4,5121:1})[a.componentType];
+      const start=(v.byteOffset||0)+(a.byteOffset||0),stride=v.byteStride||ncomp*bytes,arr=new Float32Array(a.count*ncomp),view=new DataView(bin);
+      for(let i=0;i<a.count;i++)for(let c=0;c<ncomp;c++){const p=start+i*stride+c*bytes;let x;if(a.componentType===5126)x=view.getFloat32(p,true);else if(a.componentType===5123)x=view.getUint16(p,true);else if(a.componentType===5125)x=view.getUint32(p,true);else x=view.getUint8(p);arr[i*ncomp+c]=x;}
+      const val={data:arr,count:a.count,size:ncomp};accessors.set(index,val);return val;
+    }
+    const animations=gltf.animations.map(anim=>{
+      const tracks=[],duration=0;
+      let dur=0;
+      for(const channel of anim.channels){const sampler=anim.samplers[channel.sampler],input=accessor(sampler.input),output=accessor(sampler.output);if(input.count)dur=Math.max(dur,input.data[input.count-1]);tracks.push({node:channel.target.node,path:channel.target.path,times:input.data,values:output.data,size:output.size,interp:sampler.interpolation||'LINEAR'});}
+      return {name:anim.name||'Animation',tracks,duration:Math.max(dur,.05)};
+    });
+    const set={gltf,nodes,parents,animations,kind};
+    state.sets[kind]=set; return set;
+  }
+  async function loadManifest(kind){
+    if(state.manifest[kind].size)return;
+    const url=kind==='human'?'sf2_animation_manifest.csv':'sf2_non_humanoid_animations.csv';
+    try{const text=await (await fetch(url)).text();for(const line of text.trim().split(/\r?\n/).slice(1)){const parts=line.split(',');if(parts.length>=3)state.manifest[kind].set(parts[0],Number(parts[2]));}}catch{}
+  }
+  function vlerp(a,b,t){return a.map((x,i)=>x+(b[i]-x)*t)}
+  function qslerp(a,b,t){let dot=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3],bb=b;if(dot<0){dot=-dot;bb=b.map(x=>-x)}if(dot>.9995){const q=vlerp(a,bb,t),l=Math.hypot(...q)||1;return q.map(x=>x/l)}const theta=Math.acos(Math.min(1,dot)),s=Math.sin(theta);return a.map((x,i)=>x*Math.sin((1-t)*theta)/s+bb[i]*Math.sin(t*theta)/s)}
+  function sample(track,t){const ts=track.times,vals=track.values,n=track.size;if(ts.length===1)return Array.from(vals.slice(0,n));let lo=0,hi=ts.length-1;while(lo+1<hi){const mid=(lo+hi)>>1;if(ts[mid]<=t)lo=mid;else hi=mid}if(t<=ts[0])lo=hi=0;if(t>=ts[ts.length-1])lo=hi=ts.length-1;const a=Array.from(vals.slice(lo*n,(lo+1)*n));if(lo===hi||track.interp==='STEP')return a;const b=Array.from(vals.slice(hi*n,(hi+1)*n)),u=(t-ts[lo])/(ts[hi]-ts[lo]||1);return n===4&&track.path==='rotation'?qslerp(a,b,u):vlerp(a,b,u)}
+  function qmul(a,b){const [x,y,z,w]=a,[X,Y,Z,W]=b;return [w*X+x*W+y*Z-z*Y,w*Y-x*Z+y*W+z*X,w*Z+x*Y-y*X+z*W,w*W-x*X-y*Y-z*Z]}
+  function qrot(q,v){const [x,y,z,w]=q,[vx,vy,vz]=v;const tx=2*(y*vz-z*vy),ty=2*(z*vx-x*vz),tz=2*(x*vy-y*vx);return [vx+w*tx+(y*tz-z*ty),vy+w*ty+(z*tx-x*tz),vz+w*tz+(x*ty-y*tx)]}
+  function poseAt(){const set=state.sets[state.kind],anim=state.clip;if(!set||!anim)return[];const props=set.nodes.map(n=>({t:n.translation||[0,0,0],r:n.rotation||quatIdentity,s:n.scale||[1,1,1]}));for(const tr of anim.tracks){const val=sample(tr,state.time);if(tr.path==='translation')props[tr.node].t=val;else if(tr.path==='rotation')props[tr.node].r=val;else if(tr.path==='scale')props[tr.node].s=val}
+    const world=new Array(set.nodes.length),calc=i=>{if(world[i])return world[i];const p=set.parents[i],local=props[i];if(p<0)return world[i]={p:local.t.slice(),r:local.r.slice(),s:local.s.slice()};const up=calc(p),off=qrot(up.r,[local.t[0]*up.s[0],local.t[1]*up.s[1],local.t[2]*up.s[2]]);return world[i]={p:[up.p[0]+off[0],up.p[1]+off[1],up.p[2]+off[2]],r:qmul(up.r,local.r),s:[up.s[0]*local.s[0],up.s[1]*local.s[1],up.s[2]*local.s[2]]}};for(let i=0;i<world.length;i++)calc(i);return world;
+  }
+  function boneColor(name){if(/Weapon/i.test(name))return '#f7a2ba';if(/Toe|Foot|Heel|Calf|Thigh|Hip/i.test(name))return '#70c8ff';if(/Finger|Hand|Forearm|Arm_|Clavicle/i.test(name))return '#87e0c6';if(/Head|Neck/i.test(name))return '#ffd184';return '#e7edf4'}
+  function resize(){const r=canvas.getBoundingClientRect();state.dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(r.width*state.dpr));canvas.height=Math.max(1,Math.round(r.height*state.dpr));ctx.setTransform(state.dpr,0,0,state.dpr,0,0)}
+  function render(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;ctx.clearRect(0,0,w,h);const pose=poseAt();if(!pose.length){requestAnimationFrame(render);return}const set=state.sets[state.kind],visiblePoints=pose.filter((_,i)=>state.kind!=='human'||!(/Weapon/i.test(set.nodes[i].name||''))).map(x=>x.p);let xs=visiblePoints.map(p=>p[0]),ys=visiblePoints.map(p=>p[1]);let minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);if(state.kind==='effects'){minX=Math.min(minX,-50);maxX=Math.max(maxX,50);minY=Math.min(minY,-50);maxY=Math.max(maxY,50)}const pad=72,scale=Math.min((w-pad*2)/Math.max(maxX-minX,40),(h-pad*2)/Math.max(maxY-minY,80));const cx=(minX+maxX)/2,cy=(minY+maxY)/2,project=p=>[w/2+(p[0]-cx)*scale,h/2-(p[1]-cy)*scale];
+    ctx.save();ctx.strokeStyle='#ffffff0b';ctx.lineWidth=1;for(let x=w/2%36;x<w;x+=36){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=h/2%36;y<h;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}const ground=project([cx,minY-10,0])[1];ctx.strokeStyle='#aeb8c526';ctx.beginPath();ctx.moveTo(20,ground);ctx.lineTo(w-20,ground);ctx.stroke();
+    if(state.kind==='human'){
+      set.nodes.forEach((node,i)=>{const p=set.parents[i];if(!node.name||node.name==='Armature')return;const color=boneColor(node.name),b=project(pose[i].p);if(/Weapon/i.test(node.name)){const axis=qrot(pose[i].r,[0,28,0]),tip=project([pose[i].p[0]+axis[0],pose[i].p[1]+axis[1],pose[i].p[2]+axis[2]]);ctx.beginPath();ctx.moveTo(b[0],b[1]);ctx.lineTo(tip[0],tip[1]);ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();return}if(p<0||set.nodes[p]?.name==='Armature')return;const a=project(pose[p].p);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineCap='round';ctx.strokeStyle=color;ctx.lineWidth=/Pelvis|Chest|Stomach|Head|Hip/.test(node.name)?8:5;ctx.stroke();ctx.beginPath();ctx.arc(b[0],b[1],/Head/.test(node.name)?4.4:2.8,0,Math.PI*2);ctx.fillStyle=color;ctx.fill()});
+      const root=pose[29]?project(pose[29].p):[w/2,h/2];ctx.beginPath();ctx.ellipse(root[0],ground+5,Math.max(24,scale*31),6,0,0,Math.PI*2);ctx.fillStyle='#0005';ctx.fill();
+    } else {
+      const colors=['#f6a45d','#78dec6','#8baaff','#f49cbb','#d4abff','#ffcf77'];
+      pose.forEach((item,i)=>{const p=project(item.p);ctx.beginPath();ctx.arc(p[0],p[1],5,0,Math.PI*2);ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#ffffff88';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#c6cfdb';ctx.font='10px system-ui';ctx.fillText(String(i+1).padStart(2,'0'),p[0]+7,p[1]-7)});
+      // A faint streak helps make fast moving points readable.
+      if(state.clip){ctx.fillStyle='#f6a45d';ctx.font='12px system-ui';ctx.fillText('track points',16,h-16)}
+    }ctx.restore();requestAnimationFrame(render);
+  }
+  function timeLabel(t){const m=Math.floor(t/60),s=(t%60).toFixed(2).padStart(5,'0');return `${m}:${s}`}
+  function chooseClip(index,autoplay=true){const set=state.sets[state.kind];if(!set?.animations.length)return;state.clipIndex=(index+set.animations.length)%set.animations.length;state.clip=set.animations[state.clipIndex];state.time=0;state.duration=state.clip.duration||1;state.playing=autoplay;$('cliptitle').textContent=state.clip.name;$('frames').textContent=(state.manifest[state.kind].get(state.clip.name)||Math.round(state.duration*20))+' frames';$('duration').textContent=timeLabel(state.duration);$('scrub').max=state.duration;$('scrub').value=0;$('play').textContent=state.playing?'Tạm dừng':'Phát';$('fps').textContent=state.kind==='human'?'20 fps':'20 fps';renderList();}
+  function renderList(){const set=state.sets[state.kind];if(!set)return;const q=$('search').value.trim().toLowerCase(),filtered=set.animations.map((a,i)=>({a,i})).filter(x=>!q||x.a.name.toLowerCase().includes(q));$('count').textContent=`${filtered.length} / ${set.animations.length} clip`;const frag=document.createDocumentFragment();for(const {a,i} of filtered){const b=document.createElement('button');b.className='clip'+(i===state.clipIndex?' active':'');b.type='button';b.title=a.name;b.innerHTML='<span class="dot"></span><span class="clipname"></span><span class="clipmeta"></span>';b.querySelector('.clipname').textContent=a.name.replace(/^SF2_/,'');b.querySelector('.clipmeta').textContent=(state.manifest[state.kind].get(a.name)||Math.round(a.duration*20))+'f';b.addEventListener('click',()=>chooseClip(i,true));frag.appendChild(b)}$('cliplist').replaceChildren(frag)}
+  async function switchKind(kind){state.kind=kind;state.clip=null;state.playing=true;$('loading').style.display='grid';$('loading').textContent='Đang nạp dữ liệu animation…';$('modebadge').textContent=kind==='human'?'SF2 32-bone rig':'14-track effect rig';try{await Promise.all([loadSet(kind),loadManifest(kind)]);$('loaded').textContent=kind==='human'?'498 clip đã nạp':'62 clip đã nạp';$('loading').style.display='none';chooseClip(0,true)}catch(err){$('loading').innerHTML='<span class="error"></span>';$('.error').textContent='Lỗi nạp: '+err.message;$('loaded').textContent='Lỗi dữ liệu';console.error(err)}}
+  $('collection').addEventListener('change',e=>switchKind(e.target.value));$('search').addEventListener('input',renderList);$('play').addEventListener('click',()=>{state.playing=!state.playing;$('play').textContent=state.playing?'Tạm dừng':'Phát';if(state.playing&&state.time>=state.duration)state.time=0});$('prev').addEventListener('click',()=>chooseClip(state.clipIndex-1,true));$('next').addEventListener('click',()=>chooseClip(state.clipIndex+1,true));$('scrub').addEventListener('input',e=>{state.time=Number(e.target.value);state.drag=true;state.playing=false;$('play').textContent='Phát';$('current').textContent=timeLabel(state.time)});$('scrub').addEventListener('change',()=>state.drag=false);window.addEventListener('resize',resize);
+  function tick(now){const dt=Math.min((now-state.last)/1000,.1)||0;state.last=now;if(state.playing&&state.clip){state.time+=dt*Number($('speed').value);if(state.time>=state.duration)state.time%=state.duration;$('scrub').value=state.time;$('current').textContent=timeLabel(state.time)}requestAnimationFrame(tick)}
+  resize();requestAnimationFrame(render);requestAnimationFrame(tick);switchKind('human');
+})();
+</script>
+</body>
+</html>
