@@ -14,7 +14,7 @@ The demo is illustrative. Its receiver scoring, tactical movement targets, match
 
 - [`reverse/cm0304-static-analysis.md`](reverse/cm0304-static-analysis.md) records observed native-code paths, action-state branches, and unknowns.
 - [`reverse/action-state-name-map.csv`](reverse/action-state-name-map.csv) lists 210 action IDs mapped to embedded `ME_*` labels; [`reverse/extract_action_names.py`](reverse/extract_action_names.py) regenerates it from the matching `cm0304.exe`.
-- [`sources/source-manifest.csv`](sources/source-manifest.csv) lists original archives and the extracted executable by size and SHA-256. The source binaries are not stored in this public repository.
+- [`sources/source-manifest.csv`](sources/source-manifest.csv) lists original archives, the extracted executable, and inspected movement lookup tables by size and SHA-256. The game binaries and extracted tables remain local and are not stored in this public repository.
 
 ## Shadow Fight 2 research
 
