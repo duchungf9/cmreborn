@@ -22,6 +22,12 @@ The name resolver at `0x8F5BF0` maps action IDs to embedded `ME_*` labels throug
 
 The map now gives exact examples across the engine: passes and clearances (`100`, `102–124`), on-ball states (`200–214`), shot types (`300–316`), player movement/marking/interception (`400+` selected IDs), contests and ball control (`600–709` selected IDs), goalkeeper actions (`800–809` and `1000+`), tackling/fouls (`900+` selected IDs), and set-piece positioning (`1100+` selected IDs). IDs are sparse; do not treat the displayed spans as continuous enums. These are formatter labels, not evidence that each state is reachable in every match situation.
 
+## Geometry helpers
+
+- `0x8BC550` derives a bearing from an object's x/y at `+0x48/+0x4C` toward a target. If both coordinates match, it returns the object's heading at `+0x50`; otherwise it quantizes the deltas and looks up a heading in a table. This is the direction helper used in the run selector, not a distance result.
+- `0x8C7610` computes the shortest circular difference between two 16-bit headings: absolute difference, folded around `360`, yielding a value up to `180`. Its callers compare against values such as `40` (`0x28`), confirming degree-like heading units.
+- `0x8C64D0` computes an integer square root of `dx² + dy²`; it is called by a separate distance wrapper. The bearing and heading units are now clear, while pitch-coordinate scale and the distance wrapper's optional mode remain unmapped.
+
 ## Tactical inputs
 
 The game data includes team instructions for passing style, passing focus, tackling, closing down, mentality, offside trap, zonal marking, counter-attacking, and men behind the ball. Player instructions can override individual behaviors, including run-with-ball and hold-up behavior. The existence of an instruction is confirmed; its exact contribution to action scores is not.
