@@ -10,13 +10,17 @@ This is not a 100% reconstruction. Decision weights, most attribute effects, sev
 
 - The selection routine beginning at `0x9234A0` writes an action identifier into `[object + 0x8CC]`. An action-processing routine begins near `0x92DF20`.
 - In the run-with-ball path, the code compares the absolute x and y target deltas with `10`. It selects action `201` when both are strictly below `10`; otherwise it selects `200`. The source field units have not been mapped to metres.
-- A nearby helper path calls `0x8FE890`; when that predicate succeeds, the selector writes action `205`. The helper's complete semantics have not been recovered.
-- The observed shot path is `0x93181B → 0x94C0D0 → 0x94E980 → 0x94CBB0`. The last routine samples/plans a ball trajectory. Inspected arithmetic uses elapsed time as a percentage of duration and caps plotted samples at 1000; coordinate scaling is fixed-point in the inspected path.
+- Other constant writes in the same selector confirm branches for `204` (`ME_WAIT_TO_FIND_SET_PIECE_ACTION`), `208` (`ME_TAKE_A_DIVE`), `212` (`ME_GK_DROP_BALL_FOR_DISTRIBUTION`), `213` (`ME_ATTEMPT_TO_ROUND_KEEPER`), and `1000` (`ME_GK_USE_SIX_SECONDS`). Their exact predicates are still being mapped.
+- The run selector also calls shared helper `0x8FE890` (26 direct call sites in the executable). It scans candidate objects under a match context and uses geometry helpers. Its observed return paths produce byte values `0`, `1`, and `2`; the two run-selector branches use opposite zero/nonzero tests before choosing action `205`. Treat it as a tri-state helper whose exact meaning depends on the caller, not a global boolean “success” flag.
+- The action processor at `0x92DF20` calls `0x8EB4E0` with the current action ID. That helper special-cases IDs `501–510`, writes one of ten associated constants to an output slot, and returns true; other IDs write `100` and return false. These action IDs are named as foul/violent-play events in the resolver, but the meaning of the secondary constants has not been identified.
+- The observed shot path is `0x93181B → 0x94C0D0 → 0x94E980 → 0x94CBB0`. `0x94E980` repeatedly asks `0x94CBB0` for trajectory samples, increments a sample count at `+0x3EE8`, and stores values from `+0x3ED8`. A comparison against `999` bounds the loop to about 1000 samples (indices 0–999). A coefficient helper uses `0x4000` (16384) as a fixed-point scale; the coordinate units and complete trajectory equations are still unresolved.
 - The normal-pass action `100` routes through a branch around `0x92EF36` and calls `0x903840`. That routine copies a 17-word context record from offset `+0x15C` to `+0x118` before related match-context updates.
 
-## Action families identified from embedded names
+## Recovered action labels
 
-The executable contains action-name strings covering pass/cross/clearance/set pieces (`100–124`), on-ball control and movement (`200–214`), shots (`300–316`), off-ball positioning/marking/interception (`400+`), ball contests (`700+`), goalkeeper saves (`800+`), tackling (`900+`), and keeper/set-piece actions (`1000+`). These ranges summarize mapped examples, not every value in each range.
+The name resolver at `0x8F5BF0` maps action IDs to embedded `ME_*` labels through jump tables and compact byte remaps. The reproducible extraction in [`action-state-name-map.csv`](action-state-name-map.csv) contains 210 named ID/label pairs; [`extract_action_names.py`](extract_action_names.py) regenerates it from the matching executable. The resolver's fallback text is `UNKNOWN ACTION`. An absent ID in the CSV therefore means “no named label recovered from this resolver,” not proof that the number can never occur internally.
+
+The map now gives exact examples across the engine: passes and clearances (`100`, `102–124`), on-ball states (`200–214`), shot types (`300–316`), player movement/marking/interception (`400+` selected IDs), contests and ball control (`600–709` selected IDs), goalkeeper actions (`800–809` and `1000+`), tackling/fouls (`900+` selected IDs), and set-piece positioning (`1100+` selected IDs). IDs are sparse; do not treat the displayed spans as continuous enums. These are formatter labels, not evidence that each state is reachable in every match situation.
 
 ## Tactical inputs
 
@@ -24,7 +28,7 @@ The game data includes team instructions for passing style, passing focus, tackl
 
 ## Demo boundary
 
-`demo.html` uses the observed action names and the confirmed `200/201` target check as anchors. Receiver selection, player motion during ball flight, pressing targets, shot choice probabilities, and outcomes are independent prototype rules. They should not be read as recovered source behavior.
+`demo.html` uses the confirmed `200/201` target check as an anchor. Receiver selection, player motion during ball flight, pressing targets, shot choice probabilities, and outcomes are independent prototype rules. The new CSV documents the game's state labels; it does not make those prototype rules recovered engine behavior.
 
 ## Reproduction inputs
 

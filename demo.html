@@ -3395,9 +3395,9 @@ const field = {x:44,y:34,w:992,h:612};
 let app=null, grassView=null, runView=null, flightView=null, ballView=null, playerViews=[[],[]], pathKey="", lastStageWidth=-1, lastStageHeight=-1;
 let simAccumulator=0;
 const stateNames = {
-  100:"ME_NORMAL_PASS",103:"ME_PASS_INTO_CHANNEL",104:"ME_LONG_PASS",105:"ME_CROSS_TO_PLAYER",106:"ME_CROSS_INTO_AREA",120:"ME_ONE_TWO",
+  100:"ME_NORMAL_PASS",103:"ME_PASS_INTO_CHANNEL",104:"ME_LONG_PASS_UP_TO_EDGE_OF_AREA",105:"ME_CROSS_BALL_TO_PLAYER",106:"ME_CROSS_INTO_AREA",120:"ME_PASS_ONE_TWO",
   200:"ME_RUN_WITH_BALL",201:"ME_CONTINUE_RUN_WITH_BALL",202:"ME_TURN_ON_BALL",203:"ME_HOLD_UP_BALL",205:"ME_PLAY_BALL_AHEAD_AND_RUN_ONTO",
-  300:"ME_SHOT_TYPE_DEFAULT",402:"ME_MOVE_TO_TACTIC_POS",404:"ME_MOVE_INTO_SPACE",407:"ME_MARK_PLAYER",414:"ME_INTERCEPT_BALL",422:"ME_CLOSE_DOWN_BALL_PLAYER",703:"ME_INTERCEPT_BALL",800:"ME_SAVE_HELD",900:"ME_SLIDE_TACKLE",901:"ME_BLOCK_TACKLE"
+  300:"ME_SHOT_TYPE_DEFAULT",402:"ME_MOVE_TO_TACTIC_POS",404:"ME_MOVE_INTO_SPACE",407:"ME_MOVE_TO_MARK_PLAYER",414:"ME_MOVE_TO_INTERCEPT_BALL",422:"ME_MOVE_TO_CLOSE_DOWN_BALL_PLAYER",703:"ME_INTERCEPT_BALL",800:"ME_SAVE_HELD",900:"ME_SLIDE_TACKLE",901:"ME_BLOCK_TACKLE"
 };
 const state = {tick:0,clockSeconds:0,half:0,score:[0,0],players:[[],[]],carrier:null,ball:{x:50,y:32},flight:null,goalWait:0,shots:[0,0],passes:[0,0],running:true,timer:null,speed:1,random:0x03040417,lastDecision:null,feed:[]};
 const clamp = function(v,a,b){return Math.max(a,Math.min(b,v));};
