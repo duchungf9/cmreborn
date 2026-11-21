@@ -28,6 +28,12 @@ The map now gives exact examples across the engine: passes and clearances (`100`
 - `0x8C7610` computes the shortest circular difference between two 16-bit headings: absolute difference, folded around `360`, yielding a value up to `180`. Its callers compare against values such as `40` (`0x28`), confirming degree-like heading units.
 - `0x8C65E0` subtracts two coordinate pairs and calls `0x8C64D0`, which computes an integer square root of `dx² + dy²`. This confirms Euclidean-distance arithmetic, but not what one coordinate unit means in metres. A separate object-distance wrapper has an optional mode that remains unmapped.
 
+## Randomness and conditional actions
+
+- The random-state code at `0x9747A0` / `0x974850` uses a 624-word state, the `0x6C078965` seed recurrence, the `0x9908B0DF` twist constant, and the standard MT tempering masks. This is an MT19937-family generator. Wrapper `0x8BCA20` requests a bounded draw; the multiply-high scaling maps a positive bound `n` to an integer in `[0, n-1]`. A match-context callback can intercept the generated value, so the exact stream also depends on runtime setup.
+- In one branch of the selector, `0x927B06` requests `Random(100)` and compares the result with a local threshold before selecting `208` (`ME_TAKE_A_DIVE`). This confirms a percentage-sized random gate in that branch, but the threshold's meaning and the other gates around it are not decoded.
+- The demo now uses an MT19937 implementation and the same bounded-integer scaling as its random source. Its seed, random-call order, thresholds, and outcomes remain prototype choices; this does not reproduce the game's match sequence.
+
 ## Tactical inputs
 
 The game data includes team instructions for passing style, passing focus, tackling, closing down, mentality, offside trap, zonal marking, counter-attacking, and men behind the ball. Player instructions can override individual behaviors, including run-with-ball and hold-up behavior. The existence of an instruction is confirmed; its exact contribution to action scores is not.

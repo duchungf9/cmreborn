@@ -121,7 +121,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
           <div><div class="metric-label"><span>Shot chance</span><span id="shotValue">—</span></div><div class="meter"><span id="shotBar"></span></div></div>
         </div>
       </div>
-      <div class="evidence"><strong>Observed in executable:</strong> run selector at 0x9285BC can route through its helper to action 205; otherwise it chooses 201 when both target deltas are under 10 units, or 200. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0.<br><strong>Prototype movement:</strong> the receiver runs onto passes, teammates support and defenders press during ball flight. <strong>Still inferred:</strong> movement targets, receiver scoring, tactical weights and shot outcomes.</div>
+      <div class="evidence"><strong>Observed in executable:</strong> run selector at 0x9285BC can route through its helper to action 205; otherwise it chooses 201 when both target deltas are under 10 units, or 200. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Prototype movement:</strong> the receiver runs onto passes, teammates support and defenders press during ball flight. <strong>Still inferred:</strong> movement targets, random call order, tactical weights and shot outcomes.</div>
     </div>
   </section>
 </main>
@@ -3399,9 +3399,18 @@ const stateNames = {
   200:"ME_RUN_WITH_BALL",201:"ME_CONTINUE_RUN_WITH_BALL",202:"ME_TURN_ON_BALL",203:"ME_HOLD_UP_BALL",205:"ME_PLAY_BALL_AHEAD_AND_RUN_ONTO",
   300:"ME_SHOT_TYPE_DEFAULT",402:"ME_MOVE_TO_TACTIC_POS",404:"ME_MOVE_INTO_SPACE",407:"ME_MOVE_TO_MARK_PLAYER",414:"ME_MOVE_TO_INTERCEPT_BALL",422:"ME_MOVE_TO_CLOSE_DOWN_BALL_PLAYER",703:"ME_INTERCEPT_BALL",800:"ME_SAVE_HELD",900:"ME_SLIDE_TACKLE",901:"ME_BLOCK_TACKLE"
 };
-const state = {tick:0,clockSeconds:0,half:0,score:[0,0],players:[[],[]],carrier:null,ball:{x:50,y:32},flight:null,goalWait:0,shots:[0,0],passes:[0,0],running:true,timer:null,speed:1,random:0x03040417,lastDecision:null,feed:[]};
+const state = {tick:0,clockSeconds:0,half:0,score:[0,0],players:[[],[]],carrier:null,ball:{x:50,y:32},flight:null,goalWait:0,shots:[0,0],passes:[0,0],running:true,timer:null,speed:1,lastDecision:null,feed:[]};
 const clamp = function(v,a,b){return Math.max(a,Math.min(b,v));};
-const rand = function(){let x=state.random>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;state.random=x>>>0;return (state.random>>>0)/4294967296;};
+const mtState = new Uint32Array(624);
+let mtIndex=624;
+function seedRng(seed){mtState[0]=seed>>>0;for(let i=1;i<624;i++){const x=mtState[i-1]^(mtState[i-1]>>>30);mtState[i]=(Math.imul(0x6c078965,x)+i)>>>0;}mtIndex=624;}
+function nextRandom31(){
+  if(mtIndex>=624){for(let i=0;i<624;i++){const y=(mtState[i]&0x80000000)|(mtState[(i+1)%624]&0x7fffffff);mtState[i]=(mtState[(i+397)%624]^(y>>>1)^((y&1)?0x9908b0df:0))>>>0;}mtIndex=0;}
+  let y=mtState[mtIndex++];y^=y>>>11;y^=(y<<7)&0x9d2c5680;y^=(y<<15)&0xefc60000;y^=y>>>18;return (y>>>0)&0x7fffffff;
+}
+seedRng(0x03040417);
+const rand = function(){return nextRandom31()/0x80000000;};
+const randInt = function(limit){return Math.floor(nextRandom31()*limit/0x80000000);};
 const dist = function(a,b){return Math.hypot(a.x-b.x,a.y-b.y);};
 function makePlayer(team,num,role,rx,ry){
   const z = ((num*7 + team*11) % 9);
@@ -3666,7 +3675,7 @@ function updateFlight(deltaMS){
     setTrace(state.carrier,703,"The pass was intercepted in the prototype; interception states exist in the executable.",{pressure:f.meta.pressure||0,lane:f.meta.lane||0,shot:0});
     event(playerLabel(state.carrier)+' intercepts · ME_INTERCEPT_BALL [703]',state.carrier.team);
   }else{
-    state.carrier.nextDecision=state.tick+4+Math.floor(rand()*3);
+    state.carrier.nextDecision=state.tick+4+randInt(3);
     event(playerLabel(f.target)+' receives the pass',f.team);
   }
   updateReadout();
@@ -3737,7 +3746,7 @@ function decideWithBall(){
   p.runX=target.x;p.runY=target.y;
   setTrace(p,code,"Run option selected. The executable contains a target check that switches 200/201 when both coordinate deltas are under 10.",metrics);
   event(playerLabel(p)+' carries the ball · '+stateNames[code]+' ['+code+']',team);
-  p.nextDecision=state.tick+5+Math.floor(rand()*3);
+  p.nextDecision=state.tick+5+randInt(3);
 }
 function attemptTackle(){
   if(!state.carrier||state.flight)return;
@@ -3808,7 +3817,7 @@ function setRunTimer(){
 function freshMatch(){
   state.tick=0;state.clockSeconds=0;state.half=0;state.score=[0,0];state.shots=[0,0];state.passes=[0,0];state.flight=null;state.goalWait=0;
   if(app)clearPlayerViews();
-  state.random=0x03040417;state.feed=[];state.players=[makeTeam(0),makeTeam(1)];pathKey="";simAccumulator=0;
+  seedRng(0x03040417);state.feed=[];state.players=[makeTeam(0),makeTeam(1)];pathKey="";simAccumulator=0;
   resetPositions();
   if(app)addPlayerViews();
   state.carrier=state.players[0][10];state.carrier.x=49;state.carrier.y=32;state.carrier.nextDecision=4;state.ball={x:50,y:32};
