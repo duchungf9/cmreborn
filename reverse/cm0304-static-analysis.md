@@ -28,6 +28,16 @@ The player decision block around `0x93AE98–0x93B17A` contains live off-ball mo
 
 These branches establish that movement decisions use a predicted ball-path record set and explicit competing reach/index checks. They do not expose the full scoring formula, all action transitions, or a direct mapping from simulation units to field coordinates.
 
+## Ball trajectory state
+
+- `0x94C0D0` initializes a trajectory object from three supplied coordinate values, resets trajectory counters/flags, and copies the match counter at `[match + 0xB0]` into its initial time fields. When there is no explicit source object, a neighboring initializer (`0x94C130`) asks `0x8BBAC0` for a current position based on the match's active ball object before initializing the trajectory.
+- `0x94E980` builds the time/position samples. It stores position records at 16-byte strides beginning at object `+0x58`, tracks sample metadata around `+0x3ED4/+0x3ED8`, and increments a count at `+0x3EE8`. A loop bounds its sample index to `0..999`; `0x94CBB0` also guards against an index reaching `1000`.
+- The sampling helper `0x94CBB0` computes an integer progress percentage from two time arguments and a duration: `(timeB - timeA) * 100 / duration`. It then combines that progress with trajectory parameters and fixed-point helpers to generate output values. Some intermediate terms are shifted by `14` bits, confirming a `2^14` fixed-point component, but the complete coordinate and velocity equations are not yet recovered.
+- `0x8C3810` and `0x8C3850` take a signed 16-bit heading and a magnitude, fetch separate components from heading/speed tables, and scale the table result when magnitude is at least `100`. `0x94CBB0` passes the trajectory heading at context `+0x5C` and a computed scalar to both helpers, then adds their results into the two output coordinates. This confirms direction-vector motion in the sampled path; the third dword in each 16-byte point record is not yet identified.
+- `0x94C230` scans the recorded time values at `+0x3ED4` and returns the first one that is not earlier than the current match counter at `[match + 0xB0]`; if no stored sample qualifies, it returns the current counter. This links the trajectory sample list to the live match timeline, although the duration unit and cadence are still unknown.
+
+The native engine therefore keeps a sampled trajectory timeline that off-ball decision code can query. The prototype's straight pass/shot path and its animation duration remain illustrative approximations.
+
 ## Recovered action labels
 
 The name resolver at `0x8F5BF0` maps action IDs to embedded `ME_*` labels through jump tables and compact byte remaps. The reproducible extraction in [`action-state-name-map.csv`](action-state-name-map.csv) contains 210 named ID/label pairs; [`extract_action_names.py`](extract_action_names.py) regenerates it from the matching executable. The resolver's fallback text is `UNKNOWN ACTION`. An absent ID in the CSV therefore means “no named label recovered from this resolver,” not proof that the number can never occur internally.
