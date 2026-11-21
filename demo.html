@@ -57,6 +57,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
 .action-code{color:#8fbdc3;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;margin-top:3px}
 .trace-text{color:#b1c0c1;font-size:12px;margin:9px 0 11px;min-height:33px}
 .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.motion-readout{margin-top:10px;padding:7px 9px;border:1px solid #26363a;border-radius:6px;background:#101a1d;color:#b6d0d2;font:11px ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums}
 .metric-label{display:flex;justify-content:space-between;font-size:10px;color:#9badad;margin-bottom:4px}
 .meter{height:4px;border-radius:4px;background:#26363a;overflow:hidden}
 .meter span{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#58a8b9,#a1e8ec);width:0;transition:width .25s}
@@ -120,8 +121,9 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
           <div><div class="metric-label"><span>Passing lane</span><span id="laneValue">—</span></div><div class="meter"><span id="laneBar"></span></div></div>
           <div><div class="metric-label"><span>Shot chance</span><span id="shotValue">—</span></div><div class="meter"><span id="shotBar"></span></div></div>
         </div>
+        <div class="motion-readout" id="motionReadout">PLAYER PATH SAMPLES · waiting for movement</div>
       </div>
-      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. An off-ball branch scans trajectory records and chooses 414 or 452 after reach/index checks; a later resolver can return 600 or goalkeeper outcomes 800–806 after trajectory/time/context checks. Action 100 routes through 0x903840, which initializes/builds the sampled ball path and updates ball-owner bookkeeping. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler interpolates between them. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Prototype movement:</strong> defenders sample the visible ball path and move toward an earliest reachable point; teammates support during flight. <strong>Still inferred:</strong> this demo does not run the native player path builder/sampler, interception planner, ball-arrival resolver or restart logic; its movement targets, random call order, tactical weights and shot outcomes remain inferred.</div>
+      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. An off-ball branch scans trajectory records and chooses 414 or 452 after reach/index checks; a later resolver can return 600 or goalkeeper outcomes 800–806 after trajectory/time/context checks. Action 100 routes through 0x903840, which initializes/builds the sampled ball path and updates ball-owner bookkeeping. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler interpolates between them. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Movement in this demo:</strong> player coordinates now follow timed samples built with the extracted native vector values at magnitudes 25, 46 and 62 and the observed 14-bit position accumulator. The display interpolates between adjacent samples; the native reader itself selects one sample by match time. <strong>Still inferred:</strong> target selection, speed scaling, unknown record metadata, interception decisions, ball-arrival outcomes, tactical weights and shot outcomes.</div>
     </div>
   </section>
 </main>
@@ -3401,6 +3403,15 @@ const stateNames = {
 };
 const state = {tick:0,clockSeconds:0,half:0,score:[0,0],players:[[],[]],carrier:null,ball:{x:50,y:32},flight:null,goalWait:0,shots:[0,0],passes:[0,0],running:true,timer:null,speed:1,lastDecision:null,feed:[]};
 const clamp = function(v,a,b){return Math.max(a,Math.min(b,v));};
+const NATIVE_VECTOR_MAGNITUDES = [25,46,62];
+const NATIVE_VECTOR_DATA = "ABkALgA+ABgALQA9ABgBLQE9ARgCLQM9ARgCLQM9AhgDLQQ9AhgELQY9AxgFLQc9AxgFLQg9AxgGLQk8BBgHLQo8BBgILQs8BRgJLAw8BRgKLA08BhgLLA48BhgLLA87BhgMLBA7BxcNKxE6BxcNKxI6CBcOKxM6CBcPKhU5CBcQKhU5CRcRKhY5CRcRKhg5ChYSKRg4ChYTKRo3ChYTKBo3CxYUKBs3CxYVKBw2DBUWKB01DBUXJx81DBUXJx80DRUXJiA0DRQYJiEzDRQZJSIyDhQaJSMyDhQaJCMxDxMbJCUwDxMcIyUwDxMcIyYvEBMdIicvEBIdIiguEBIeIigtERIfISotEREfICosEREgICsrEREgHywqEhEhHy0qEhAiHi0oEhAiHS4oExAiHS8nEw8jHC8mEw8jHDAlEw8kGzAlFA4kGjEjFA4lGjIjFA0lGTIiFA0mGDMhFQ0mFzQgFQwnFzQfFQwnFjUeFQwoFjUdFgsoFTYcFgsoFDcbFgooEzcaFgopEzcaFgopEjgYFwkqETkYFwkqETkWFwgqEDkVFwgqDzkVFwgrDjoTFwcrDToSFwcrDToRGAYsDDsQGAYsCzsPGAYsCzwOGAUsCjwNGAUsCTwMGAQtCDwLGAQtBzwKGAMtBjwJGAMtBT0IGAMtBT0HGAItBD0GGAItAz0EGAEtAj0DGAEtAj0DGAAtAT0BGAAtAD0AGQAuAD4AGAAtAD0AGAAt/z3/GP8t/j39GP8t/j39GP4t/T38GP4t/D36GP0t+z35GP0t+z34GP0t+jz3GPwt+Tz2GPwt+Dz1GPss9zz0GPss9jzzGPos9TzyGPos9TvxGPos9DvwF/kr8zrvF/kr8zruF/gr8jrtF/gq8TnrF/gq8DnrF/cq7znqF/cq7znoFvYp7jjoFvYp7TfmFvYo7TfmFvUo7DflFvUo6zbkFfQo6jXjFfQn6jXiFfQn6TThFfMm6TTgFPMm6DPfFPMl5zLeFPIl5jLdFPIk5jHdE/Ek5TDbE/Ej5DDbE/Ej5C/aE/Ai4y/ZEvAi4y7YEvAi4i3YEu8h4S3WEe8g4SzWEe8g4CvVEe8f4CrUEe4f3yrTEO4e3ijTEO4d3ijSEO0d3ifRD+0c3SbRD+0c3SXQD+0b3CXQDuwa3CPPDuwa2yPODewZ2yLODewY2iHNDesX2iDMDOsX2R/MDOsX2R/LDOsW2B3LC+oV2BzKC+oU2BvJCuoT2BrJCuoT1xrJCuoS1xjICekR1hjHCekR1hbHCOkQ1hXHCOkP1hXHCOkO1RPGB+kN1RLGB+kN1RHGBugM1BDFBugL1A/FBugL1A7EBegK1A3EBegJ1AzEBOgI0wvEBOgH0wrEA+gG0wnEA+gF0wjDA+gF0wfDAugE0wbDAugD0wTDAegC0wPDAegC0wPDAOgB0wHDAOgA0wDDAOcA0gDCAOgA0wDDAOj/0//D/+j+0/3D/+j+0/3D/uj90/zD/uj80/rD/ej70/nD/ej70/jD/ej60/fE/Oj50/bE/Oj40/XE++j31PTE++j21PPE+uj11PLE+uj11PHF+uj01PDF+enz1e/G+enz1e7G+Ony1e3G+Onx1uvH+Onw1uvH9+nv1urH9+nv1ujH9uru1+jI9urt1+bJ9urt2ObJ9ers2OXJ9err2OTK9Ovq2OPL9Ovp2eHL9Ovp2eHM8+vp2uDM8+zo2t/N8+zn297O8uzm293O8uzm3N3P8e3l3NvQ8e3k3dvQ8e3k3drR8O3j3tnR8O7j3tjS8O7i3tjT7+7h39bT7+/h4NbU7+/g4NXV7+/g4dTW7u/f4dPW7vDe4tPY7vDe49LY7fDe49HZ7fHd5NHa7fHd5NDb7fHc5dDb7PLc5s/d7PLb5s7d7PPb587e7PPa6M3f6/Pa6czg6/TZ6czh6/TZ6svi6/TY6svj6vXY68rk6vXY7Mnl6vbY7cnm6vbX7cnm6vbX7sjo6ffW78fo6ffW78fq6fjW8Mfr6fjW8cfr6fjV8sbt6fnV88bu6fnV88bv6PrU9MXw6PrU9cXx6PrU9cTy6PvU9sTz6PvU98T06PzT+MT16PzT+cT26P3T+sT36P3T+8P46P3T+8P56P7T/MP66P7T/cP86P/T/sP96P/T/sP96ADT/8P/6ADTAMMA5wDSAMIA6ADTAMMA6ADTAcMB6AHTAsMD6AHTAsMD6ALTA8ME6ALTBMMG6APTBcMH6APTBcMI6APTBsQJ6ATTB8QK6ATTCMQL6AXUCcQM6AXUCsQN6AbUC8QO6AbUC8UP6AbUDMUQ6QfVDcYR6QfVDcYS6QjVDsYT6QjWD8cV6QjWEMcV6QnWEccW6QnWEccY6grXEsgY6grXE8ka6grYE8ka6gvYFMkb6gvYFcoc6wzYFssd6wzZFsse6wzZF8wf6w3aF8wg7A3aGM0h7A3bGc4i7A7bGs4j7A7cGs8j7Q/cG9Al7Q/dHNAl7Q/dHNEm7RDeHdEn7hDeHdIo7hDeHtMo7hHfH9Mq7xHgH9Qq7xHgINUr7xHhINYs7xLhIdYt8BLiItgt8BLjItgu8BPjItkv8RPkI9ov8RPkI9sw8RPlJNsw8hTmJN0x8hTmJd0y8xTnJd4y8xToJt8z8xXpJuA09BXpJ+E09BXpJ+E19BXqKOM19RbrKOQ29RbsKOU39hbtKOY39hbtKeY39hbuKeg49xfvKug59xfvKuo5+BfwKus5+BfxKus5+BfyK+06+RfzK+46+RfzK+86+hj0LPA7+hj1LPE7+hj1LPI8+xj2LPM8+xj3LPQ8/Bj4LfU8/Bj5LfY8/Rj6Lfc8/Rj7Lfg9/Rj7Lfk9/hj8Lfo9/hj9Lfw9/xj+Lf09/xj+Lf09ABj/Lf89ABgALQA9";
+const nativeVectorBytes = (function(){const raw=atob(NATIVE_VECTOR_DATA),out=new Int8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;})();
+function nativeDirectionVector(heading,magnitude){
+  const angle=((heading%360)+360)%360,mi=NATIVE_VECTOR_MAGNITUDES.indexOf(magnitude);
+  if(mi<0)throw new Error("Unsupported native movement magnitude: "+magnitude);
+  const index=(angle*NATIVE_VECTOR_MAGNITUDES.length+mi)*2;
+  return {x:nativeVectorBytes[index],y:nativeVectorBytes[index+1]};
+}
 const mtState = new Uint32Array(624);
 let mtIndex=624;
 function seedRng(seed){mtState[0]=seed>>>0;for(let i=1;i<624;i++){const x=mtState[i-1]^(mtState[i-1]>>>30);mtState[i]=(Math.imul(0x6c078965,x)+i)>>>0;}mtIndex=624;}
@@ -3419,7 +3430,7 @@ function makePlayer(team,num,role,rx,ry){
     dribbling:clamp(8+((z+4)%10),1,20),shooting:clamp(role==="F"?12+z%7:7+z%8,1,20),
     tackling:clamp(role==="D"?12+z%7:7+z%8,1,20),positioning:clamp(10+((z+2)%8),1,20),
     pace:clamp(10+((z+5)%9),1,20),reflexes:clamp(9+((z+1)%9),1,20),composure:clamp(9+((z+6)%9),1,20)
-  },runX:null,runY:null,nextDecision:0};}
+  },runX:null,runY:null,nextDecision:0,motionPath:null,motionAge:0,motionTargetX:null,motionTargetY:null,motionMagnitude:0,motionHeading:0,motionIndex:0};}
 function makeTeam(team){
   const formation=[["GK",4,32],["D",18,8],["D",18,24],["D",18,40],["D",18,56],["M",39,8],["M",39,24],["M",39,40],["M",39,56],["F",63,24],["F",63,40]];
   return formation.map(function(f,i){return makePlayer(team,i+1,f[0],f[1],f[2]);});
@@ -3462,11 +3473,32 @@ function segmentDistance(p,a,b){
   const t=den?clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/den,0,1):0;
   return Math.hypot(p.x-(a.x+t*dx),p.y-(a.y+t*dy));
 }
-function move(p,target,amount){
+function buildNativeMotionPath(p,target,magnitude){
+  const sx=Math.round(p.x*100),sy=Math.round(p.y*100),tx=Math.round(target.x*100),ty=Math.round(target.y*100);
+  const dx=tx-sx,dy=ty-sy,distance=Math.hypot(dx,dy);
+  const heading=distance===0?p.motionHeading:((Math.round(Math.atan2(dx,dy)*180/Math.PI)%360)+360)%360;
+  const vector=nativeDirectionVector(heading,magnitude),steps=Math.max(1,Math.ceil(distance/magnitude));
+  let fx=sx*0x4000,fy=sy*0x4000;
+  const samples=[{x:sx/100,y:sy/100,time:state.tick}];
+  for(let i=1;i<steps;i++){
+    fx+=vector.x*0x4000;fy+=vector.y*0x4000;
+    samples.push({x:(fx>>14)/100,y:(fy>>14)/100,time:state.tick+i});
+  }
+  samples.push({x:tx/100,y:ty/100,time:state.tick+steps});
+  return {heading:heading,samples:samples};
+}
+function advanceNativeMotion(p,target,magnitude,deltaMS){
   if(!target)return;
-  const dx=target.x-p.x,dy=target.y-p.y,d=Math.hypot(dx,dy);
-  if(d<=amount||d===0){p.x=target.x;p.y=target.y;return;}
-  p.x+=dx/d*amount;p.y+=dy/d*amount;
+  const targetShift=p.motionTargetX===null?Infinity:Math.hypot(target.x-p.motionTargetX,target.y-p.motionTargetY);
+  if(!p.motionPath||p.motionMagnitude!==magnitude||targetShift>1.25){
+    const built=buildNativeMotionPath(p,target,magnitude);
+    p.motionPath=built.samples;p.motionHeading=built.heading;p.motionMagnitude=magnitude;
+    p.motionTargetX=target.x;p.motionTargetY=target.y;p.motionAge=0;
+  }
+  p.motionAge+=deltaMS/180;
+  const last=p.motionPath.length-1,index=Math.min(Math.floor(p.motionAge),last),alpha=index===last?0:p.motionAge-index;
+  const a=p.motionPath[index],b=p.motionPath[Math.min(index+1,last)];
+  p.x=a.x+(b.x-a.x)*alpha;p.y=a.y+(b.y-a.y)*alpha;p.motionIndex=index;
 }
 function buildTargets(){
   if(!state.carrier)return;
@@ -3621,7 +3653,14 @@ function syncScene(deltaMS){
     const q=toPitch(p),v=p.view;v.position.set(q.x,q.y);p.ring.visible=p===state.carrier;
   });});
   const b=toPitch(state.ball);ballView.position.set(b.x,b.y);
+  updateMotionReadout();
   syncPaths();
+}
+function updateMotionReadout(){
+  const focus=(state.carrier&&state.carrier.motionPath)?state.carrier:state.players.flat().find(function(p){return p.motionPath&&p.motionPath.length>1;});
+  if(!focus){$("motionReadout").textContent="PLAYER PATH SAMPLES · waiting for movement";return;}
+  const total=focus.motionPath.length,index=Math.min(focus.motionIndex,total-1),sample=focus.motionPath[index];
+  $("motionReadout").textContent="PLAYER PATH SAMPLES · "+playerLabel(focus)+" · H "+String(focus.motionHeading).padStart(3,"0")+"° · "+String(index+1).padStart(2,"0")+"/"+String(total).padStart(2,"0")+" · MATCH TICK "+sample.time;
 }
 function draw(){if(app&&!state.running){syncScene(16);app.render();}}
 async function initPixi(){
@@ -3778,12 +3817,12 @@ function attemptTackle(){
   }
 }
 function advancePlayers(deltaMS){
-  const scale=deltaMS/180;
   state.players.forEach(function(team){
     team.forEach(function(p){
       if(p===state.carrier){
-        if(p.runX!==null)move(p,{x:p.runX,y:p.runY},.62*scale);
-      }else move(p,{x:p.tx,y:p.ty},(p.role==="GK"?.25:.46)*scale);
+        if(p.runX!==null)advanceNativeMotion(p,{x:p.runX,y:p.runY},62,deltaMS);
+        else{p.motionPath=null;p.motionTargetX=null;p.motionTargetY=null;}
+      }else advanceNativeMotion(p,{x:p.tx,y:p.ty},p.role==="GK"?25:46,deltaMS);
     });
   });
   updateBallOnCarrier();
@@ -3791,7 +3830,7 @@ function advancePlayers(deltaMS){
 function resetPositions(){
   state.players.forEach(function(team,ti){
     team.forEach(function(p){
-      const q=world(ti,p.rx,p.ry);p.x=q.x;p.y=q.y;p.tx=q.x;p.ty=q.y;p.runX=null;p.runY=null;
+      const q=world(ti,p.rx,p.ry);p.x=q.x;p.y=q.y;p.tx=q.x;p.ty=q.y;p.runX=null;p.runY=null;p.motionPath=null;p.motionAge=0;p.motionTargetX=null;p.motionTargetY=null;p.motionIndex=0;
     });
   });
 }
