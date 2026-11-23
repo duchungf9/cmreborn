@@ -32,6 +32,8 @@ button,select{font:inherit;color:inherit}
 .pitch-status{position:absolute;left:14px;top:12px;display:flex;gap:8px;align-items:center;pointer-events:none}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#6be28a;box-shadow:0 0 10px #6be28a;animation:pulse 1.4s infinite}
 .status-text{font-size:11px;letter-spacing:.09em;text-transform:uppercase;text-shadow:0 1px 3px #000}
+.run-legend{position:absolute;right:12px;bottom:10px;display:flex;gap:10px;padding:6px 8px;border:1px solid #ffffff25;border-radius:7px;background:#07110dcc;color:#e0ece2;font-size:10px;pointer-events:none}
+.run-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}.run-legend i{width:8px;height:8px;border-radius:50%;display:inline-block}.run-legend .space{background:#74e0d0}.run-legend .mark{background:#ffc36e}.run-legend .press{background:#ff716c}
 @keyframes pulse{50%{opacity:.35}}
 .controlbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid #29393e;background:#111a1e}
 button{border:1px solid #34474d;background:#1a282d;border-radius:7px;padding:7px 11px;cursor:pointer;transition:background .15s,border-color .15s}
@@ -74,7 +76,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
       <div class="brand-mark" aria-hidden="true">CM</div>
       <div><div class="brand-name">MATCH ENGINE STUDY</div><div class="brand-sub">Championship Manager 03/04 · 2D tactical match view</div></div>
     </div>
-    <div class="build-tag">RECONSTRUCTED PROTOTYPE · BUILD 4.1</div>
+    <div class="build-tag">RECONSTRUCTED PROTOTYPE · BUILD 4.2</div>
   </header>
 
   <section class="scorebar" aria-label="Match scoreboard">
@@ -88,6 +90,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
     <div class="pitch-wrap">
       <div id="pitch" class="pixi-host" role="img" aria-label="Top-down animated football pitch with 22 players and ball"><span style="padding:18px;color:#e5ecec">Loading match view…</span></div>
       <div class="pitch-status"><span class="live-dot" id="liveDot"></span><span class="status-text" id="matchStatus">MATCH SIMULATION</span></div>
+      <div class="run-legend" aria-label="Movement intent legend"><span><i class="space"></i>Space run</span><span><i class="mark"></i>Mark</span><span><i class="press"></i>Press / intercept</span></div>
     </div>
     <div class="controlbar" aria-label="Match controls and tactics">
       <button class="primary" id="playBtn" type="button" aria-label="Pause match">Pause</button>
@@ -124,7 +127,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
         <div class="motion-readout" id="motionReadout">PLAYER PATH SAMPLES · waiting for movement</div>
         <div class="motion-readout" id="interceptReadout">PROTOTYPE INTERCEPT · waiting for ball flight</div>
       </div>
-      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. The run-on helper 0x8FE890 uses a bounded player-based random draw and bearing/vector calculations, then scans teammate time, position, and movement-deadline fields; it returns 0/1/2 and writes a derived global threshold. Another caller applies score changes of -5 for 1 and -15 for 2, but the categories still have no verified tactical names; the demo does not call it. The off-ball selector at 0x904840 scans 16-byte ball-path records, checks distance and reach gates, and keeps the eligible record with the lowest composite score. Its return is mode-dependent (including a randomized 0x8BC3C0 estimate or -1 when no candidate exists), not the selected sample index; the exact score weights remain unresolved. Native code later chooses 414 or 452 using the selected record's auxiliary field. Action 100 routes through 0x903840, which initializes/builds the sampled ball path and updates ball-owner bookkeeping. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler computes integer progress `(timeB-timeA)*100/duration`, interpolates records with integer math, and guards against indices reaching 1000. Its mode gates and height-related fields remain unresolved. The shot selector has a penalty subtype branch: with `[player+0x9C4] & 0x200`, `Random(10)` is compared with a local threshold; on success `Random(3)` selects penalty power (312), placed (313), or wrong-way (314), while failure selects penalty default (315). If that bit is clear, the high bit of the same flags selects free kick (304); otherwise substate 705 selects diving header (309), then bit `0x2000` selects bicycle kick (305). The threshold inputs and broader flag meanings are unresolved. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. In the late target-geometry path of selector 0x9234A0, headings are limited around a reference by ±25 with 360-unit wrap handling, receive a bounded random adjustment on one flag-dependent path, then convert through 0x8C3810/0x8C3850 into target coordinates at context +0x1A4/+0x1A8 using magnitude +0x1B0 and pitch origin +0x6D0/+0x6D4. When two headings differ their vector offsets are averaged; a gated branch can copy coordinates directly instead. Field meanings and tactical trigger remain unknown. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Movement in this demo:</strong> player coordinates now follow timed samples built with the extracted native vector values at magnitudes 25, 46 and 62 and the observed 14-bit position accumulator. The display interpolates between adjacent samples; the native reader itself selects one sample by match time. The demo ranks defenders by its earliest-reach estimate during flight; it does not reproduce the native composite selector. <strong>Still inferred:</strong> target selection, speed scaling, unknown record metadata, interception score weights, ball-arrival outcomes, tactical weights and shot outcomes.</div>
+      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. The run-on helper 0x8FE890 uses a bounded player-based random draw and bearing/vector calculations, then scans teammate time, position, and movement-deadline fields; it returns 0/1/2 and writes a derived global threshold. Another caller applies score changes of -5 for 1 and -15 for 2, but the categories still have no verified tactical names; the demo does not call it. The off-ball selector at 0x904840 scans 16-byte ball-path records, checks distance and reach gates, and keeps the eligible record with the lowest composite score. Its return is mode-dependent (including a randomized 0x8BC3C0 estimate or -1 when no candidate exists), not the selected sample index; the exact score weights remain unresolved. Native code later chooses 414 or 452 using the selected record's auxiliary field. Action 100 routes through 0x903840, which initializes/builds the sampled ball path and updates ball-owner bookkeeping. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler computes integer progress `(timeB-timeA)*100/duration`, interpolates records with integer math, and guards against indices reaching 1000. Its mode gates and height-related fields remain unresolved. The shot selector has a penalty subtype branch: with `[player+0x9C4] & 0x200`, `Random(10)` is compared with a local threshold; on success `Random(3)` selects penalty power (312), placed (313), or wrong-way (314), while failure selects penalty default (315). If that bit is clear, the high bit of the same flags selects free kick (304); otherwise substate 705 selects diving header (309), then bit `0x2000` selects bicycle kick (305). The threshold inputs and broader flag meanings are unresolved. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. In the late target-geometry path of selector 0x9234A0, headings are limited around a reference by ±25 with 360-unit wrap handling, receive a bounded random adjustment on one flag-dependent path, then convert through 0x8C3810/0x8C3850 into target coordinates at context +0x1A4/+0x1A8 using magnitude +0x1B0 and pitch origin +0x6D0/+0x6D4. When two headings differ their vector offsets are averaged; a gated branch can copy coordinates directly instead. Field meanings and tactical trigger remain unknown. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Movement in this demo:</strong> player coordinates now follow timed samples built with the extracted native vector values at magnitudes 25, 46 and 62 and the observed 14-bit position accumulator. The display interpolates between adjacent samples; the native reader itself selects one sample by match time. Off-ball forwards now make channel runs, midfielders move to support lanes, and defenders close down or mark distinct opponents; colored rays show those current targets, while the movement phase is preserved when a moving target updates. These are explicit prototype behaviors, not recovered native weights. During flight, the demo ranks defenders by its earliest-reach estimate; it does not reproduce the native composite selector. <strong>Still inferred:</strong> target selection, speed scaling, unknown record metadata, interception score weights, ball-arrival outcomes, tactical weights and shot outcomes.</div>
     </div>
   </section>
 </main>
@@ -3492,45 +3495,76 @@ function advanceNativeMotion(p,target,magnitude,deltaMS){
   if(!target)return;
   const targetShift=p.motionTargetX===null?Infinity:Math.hypot(target.x-p.motionTargetX,target.y-p.motionTargetY);
   if(!p.motionPath||p.motionMagnitude!==magnitude||targetShift>1.25){
+    const hadPath=!!p.motionPath,phase=hadPath?(p.motionAge%1):0,oldHeading=p.motionHeading;
     const built=buildNativeMotionPath(p,target,magnitude);
     p.motionPath=built.samples;p.motionHeading=built.heading;p.motionMagnitude=magnitude;
-    p.motionTargetX=target.x;p.motionTargetY=target.y;p.motionAge=0;
+    p.motionTargetX=target.x;p.motionTargetY=target.y;
+    const turn=Math.abs(((built.heading-oldHeading+540)%360)-180);
+    p.motionAge=hadPath&&targetShift>1.25&&turn<100?phase:0;
   }
   p.motionAge+=deltaMS/180;
   const last=p.motionPath.length-1,index=Math.min(Math.floor(p.motionAge),last),alpha=index===last?0:p.motionAge-index;
   const a=p.motionPath[index],b=p.motionPath[Math.min(index+1,last)];
   p.x=a.x+(b.x-a.x)*alpha;p.y=a.y+(b.y-a.y)*alpha;p.motionIndex=index;
 }
+function setPlayerTarget(p,target,code){
+  p.tx=clamp(target.x,2,98);p.ty=clamp(target.y,2,62);p.actionCode=code;
+}
 function buildTargets(){
   if(!state.carrier)return;
   const carrier=state.carrier;
   [0,1].forEach(function(team){
-    const has=carrier.team===team,dir=direction(team);
-    const base=state.players[team];
+    const has=carrier.team===team,dir=direction(team),base=state.players[team];
     const opponents=state.players[1-team].filter(function(p){return p.role!=="GK";});
     const nearest=opponents.map(function(p){return {p:p,d:dist(p,carrier)};}).sort(function(a,b){return a.d-b.d;});
-    base.forEach(function(p){
-      if(p===carrier)return;
-      let rx=p.rx,ry=p.ry;
-      if(has){
-        if(p.role==="F")rx+=7;
-        else if(p.role==="M")rx+=state.mentality==="defensive"?2:state.mentality==="gung-ho"?12:state.mentality==="attacking"?9:6;
-        else if(p.role==="D")rx+=state.mentality==="gung-ho"?7:3;
-        if(p.role!=="GK")ry+=clamp((carrier.y-(team===0?ry:64-ry))*0.12,-5,5)*(team===0?1:-1);
-      }else{
-        if(p.role==="D")rx-=3;
-        if($("pressing").value==="always"||carrier.x*dir>55){
-          const ix=nearest.findIndex(function(n){return n.p===p;});
-          if(ix>=0&&ix<3){
-            const target={x:carrier.x-dir*(2.8+ix*1.2),y:carrier.y+(ix-1)*3.2};
-            const mirrored=team===0?target:{x:target.x,y:64-target.y};
-            p.tx=clamp(mirrored.x,2,98);p.ty=clamp(mirrored.y,2,62);return;
-          }
+    const relativeBallX=dir>0?carrier.x:100-carrier.x;
+    const relativeBallY=team===0?carrier.y:64-carrier.y;
+    if(has){
+      const backLine=opponents.map(function(o){return dir>0?o.x:100-o.x;}).sort(function(a,b){return b-a;});
+      const mids=base.filter(function(q){return q.role==="M";}).slice().sort(function(a,b){return dist(a,carrier)-dist(b,carrier);});
+      base.forEach(function(p){
+        if(p===carrier){p.actionCode=state.lastDecision&&state.lastDecision.p===p?state.lastDecision.code:100;return;}
+        if(p.role==="GK"){
+          setPlayerTarget(p,world(team,4,clamp(relativeBallY*.35+32*.65,24,40)),402);return;
         }
-      }
-      const point=world(team,clamp(rx,3,97),clamp(ry,3,61));
-      p.tx=point.x;p.ty=point.y;
-    });
+        if(p.role==="F"){
+          const lane=p.num%2===0?1:-1;
+          const offsideCap=Math.max(relativeBallX+2,(backLine[1]||96)-1.5);
+          const rx=Math.min(Math.max(p.rx+7,relativeBallX+12+(p.num%3)*2),offsideCap,96);
+          const ry=clamp(relativeBallY+lane*(7+(p.num%3)*1.5),4,60);
+          setPlayerTarget(p,world(team,rx,ry),404);return;
+        }
+        if(p.role==="M"){
+          const rank=mids.indexOf(p),side=rank%2===0?1:-1;
+          const rx=clamp(relativeBallX+(rank===0?4:7+rank),5,95);
+          const ry=clamp(relativeBallY+side*(rank===0?5:9+rank),4,60);
+          setPlayerTarget(p,world(team,rx,ry),404);return;
+        }
+        const rx=clamp(Math.min(p.rx+11,relativeBallX-9),7,90);
+        const ry=clamp(p.ry*.48+relativeBallY*.52,4,60);
+        setPlayerTarget(p,world(team,rx,ry),402);
+      });
+    }else{
+      const pressCount=$("pressing").value==="always"?3:(relativeBallX<55?2:0);
+      const marked=[];
+      base.forEach(function(p){
+        if(p.role==="GK"){
+          setPlayerTarget(p,world(team,4,clamp(relativeBallY*.35+32*.65,24,40)),402);return;
+        }
+        const rank=nearest.findIndex(function(n){return n.p===p;});
+        if(rank>=0&&rank<pressCount){
+          const side=rank===1?-1:rank===2?1:0;
+          setPlayerTarget(p,{x:carrier.x-dir*(1.6+rank*1.5),y:carrier.y+side*(2.2+rank)},rank===0?422:rank===1?407:400);return;
+        }
+        if(p.role==="D"){
+          const candidates=opponents.filter(function(o){return o!==carrier;}).sort(function(a,b){return dist(a,p)-dist(b,p);});
+          const marker=candidates.find(function(o){return marked.indexOf(o)<0;})||candidates[0];
+          if(marker){marked.push(marker);setPlayerTarget(p,{x:marker.x-dir*3.2,y:marker.y+(p.num%2===0?2.5:-2.5)},407);return;}
+        }
+        const side=p.num%2===0?1:-1;
+        setPlayerTarget(p,{x:carrier.x-dir*6.5,y:carrier.y+side*5.5},400);
+      });
+    }
   });
 }
 function predictedBallPoint(f,progress){
@@ -3558,9 +3592,9 @@ function buildFlightTargets(){
     if(!has&&nearest.length)state.interception={p:nearest[0].p,eta:nearest[0].eta,rank:1,count:nearest.length};
     base.forEach(function(p){
       p.runX=null;p.runY=null;
-      if(p===f.target){p.tx=clamp(f.end.x,2,98);p.ty=clamp(f.end.y,2,62);return;}
+      if(p===f.target){setPlayerTarget(p,{x:f.end.x,y:f.end.y},100);return;}
       if(has){
-        if(p.role==="GK")return;
+        if(p.role==="GK"){p.actionCode=402;return;}
         let rx=p.rx,ry=p.ry;
         if(p.role==="F")rx+=f.kind==="shot"?9:5;
         else if(p.role==="M")rx+=state.mentality==="defensive"?2:state.mentality==="gung-ho"?11:state.mentality==="attacking"?8:5;
@@ -3569,23 +3603,22 @@ function buildFlightTargets(){
         if(p===f.meta.passer)rx+=3;
         if(f.kind==="shot"&&p.role==="F")ry+=clamp(((team===0?f.end.y:64-f.end.y)-ry)*.12,-3,3);
         const point=world(team,clamp(rx,3,97),clamp(ry,3,61));
-        p.tx=point.x;p.ty=point.y;
+        setPlayerTarget(p,point,404);
       }else if(p.role==="GK"){
         if(f.kind==="shot"){
           const relativeEndY=team===0?f.end.y:64-f.end.y;
           const point=world(team,p.rx,clamp(relativeEndY,20,44));
-          p.tx=point.x;p.ty=point.y;
-        }
+          setPlayerTarget(p,point,400);
+        }else p.actionCode=402;
       }else{
         const rank=nearest.findIndex(function(n){return n.p===p;});
         if(rank>=0&&rank<3){
           const target=nearest[rank].point;
-          p.tx=clamp(target.x-dir*(1.1+rank*.45),2,98);
-          p.ty=clamp(target.y+(rank-1)*1.3,2,62);return;
+          setPlayerTarget(p,{x:target.x-dir*(1.1+rank*.45),y:target.y+(rank-1)*1.3},414);return;
         }
         const rx=clamp(p.rx-(p.role==="D"?1:0)+clamp((relativeBall.x-p.rx)*.07,-2,2),3,97);
         const ry=clamp(p.ry+clamp((relativeBall.y-p.ry)*.10,-3,3),3,61);
-        const point=world(team,rx,ry);p.tx=point.x;p.ty=point.y;
+        const point=world(team,rx,ry);setPlayerTarget(p,point,400);
       }
     });
   });
@@ -3620,10 +3653,11 @@ function addPlayerViews(){
     team.forEach(function(p){
       const c=new PIXI.Container(),home=ti===0,r=p.role==="GK"?13:12;
       const token=new PIXI.Graphics().circle(0,0,r).fill(home?0x44b9d9:0xe7a44c).stroke({color:0xf2f4e9,width:2});
+      const headingMark=new PIXI.Graphics().moveTo(0,-r-3).lineTo(-3,-r+2).lineTo(3,-r+2).closePath().fill(0xf2f4e9);
       const ring=new PIXI.Graphics().circle(0,0,r+5).stroke({color:0xf8f5bd,width:1.5,alpha:.9});ring.visible=false;
       const label=new PIXI.Text({text:String(p.num),style:{fontFamily:"Arial",fontSize:10,fontWeight:"bold",fill:0x132126}});label.anchor.set(.5);
-      c.addChild(token,ring,label);const q=toPitch(p);c.position.set(q.x,q.y);app.stage.addChild(c);
-      p.view=c;p.ring=ring;playerViews[ti].push(c);
+      c.addChild(token,headingMark,ring,label);const q=toPitch(p);c.position.set(q.x,q.y);app.stage.addChild(c);
+      p.view=c;p.ring=ring;p.headingMark=headingMark;playerViews[ti].push(c);
     });
   });
   ballView=new PIXI.Graphics().circle(0,0,5.2).fill(0xffffff).stroke({color:0x1a2824,width:1});
@@ -3640,9 +3674,17 @@ function syncPaths(){
   const rkey=carrier&&carrier.runX!==null?[carrier.runX,carrier.runY].join(":"):"";
   const f=state.flight;
   const fkey=f?[f.kind,f.start.x,f.start.y,f.end.x,f.end.y].join(":"):"";
-  const key=rkey+"|"+fkey;if(key===pathKey)return;pathKey=key;
+  const runners=state.players.flat().filter(function(p){return p.actionCode===404||p.actionCode===407||p.actionCode===422||p.actionCode===414||p.actionCode===452;});
+  const moveKey=runners.map(function(p){return [p.team,p.num,p.actionCode,Math.round(p.x*2),Math.round(p.y*2),Math.round(p.tx*2),Math.round(p.ty*2)].join(":");}).join(";");
+  const key=rkey+"|"+fkey+"|"+moveKey;if(key===pathKey)return;pathKey=key;
   runView.clear();flightView.clear();
   if(carrier&&carrier.runX!==null){const a=toPitch(carrier),b=toPitch({x:carrier.runX,y:carrier.runY});runView.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({color:0xeff8b7,width:2,alpha:.48});}
+  runners.forEach(function(p){
+    if(dist(p,{x:p.tx,y:p.ty})<2.5)return;
+    const a=toPitch(p),b=toPitch({x:p.tx,y:p.ty}),color=p.actionCode===422||p.actionCode===414||p.actionCode===452?0xff716c:p.actionCode===407?0xffc36e:0x74e0d0;
+    runView.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({color:color,width:1.5,alpha:.48});
+    runView.circle(b.x,b.y,2.5).fill({color:color,alpha:.55});
+  });
   if(f){const a=toPitch(f.start),b=toPitch(f.end);flightView.moveTo(a.x,a.y).quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+(f.kind==="shot"?-18:7),b.x,b.y).stroke({color:f.kind==="shot"?0xfff2ba:0xeaf7c8,width:2,alpha:.75});}
 }
 function syncScene(deltaMS){
@@ -3654,6 +3696,7 @@ function syncScene(deltaMS){
   }
   state.players.forEach(function(team){team.forEach(function(p){
     const q=toPitch(p),v=p.view;v.position.set(q.x,q.y);p.ring.visible=p===state.carrier;
+    if(p.headingMark)p.headingMark.rotation=(p.motionHeading+180)*Math.PI/180;
   });});
   const b=toPitch(state.ball);ballView.position.set(b.x,b.y);
   updateMotionReadout();
