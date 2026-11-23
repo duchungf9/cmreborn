@@ -168,7 +168,7 @@ The upper scan bound is adjusted by event and trajectory context: bits `0x2000` 
 
 ### Demo reverse-progress estimate (2026-11-23)
 
-The demo now shows a visible checklist and a **37% manual estimate** across six equally weighted areas: action arbitration/transitions, player movement/off-ball decisions, pass/shot/set-piece execution, ball trajectory/contact, goalkeeper/outcome resolution, and tactical/match-state interactions. The score is a coarse progress estimate based on the documented, native-backed paths in each area, not a percentage of executable bytes recovered and not an equivalence score. Every area remains partial; the checklist names the main missing work. The demo still visibly separates native observations from inferred/proxy behavior.
+The demo now shows a visible checklist and a **38% manual estimate** across six equally weighted areas: action arbitration/transitions, player movement/off-ball decisions, pass/shot/set-piece execution, ball trajectory/contact, goalkeeper/outcome resolution, and tactical/match-state interactions. The score is a coarse progress estimate based on the documented, native-backed paths in each area, not a percentage of executable bytes recovered and not an equivalence score. Every area remains partial; the checklist names the main missing work. The demo still visibly separates native observations from inferred/proxy behavior.
 
 
 ### Distribution and clearance builder (`0x9160F0`, verified project identity)
@@ -190,4 +190,13 @@ The selector's references to `0x9160F0` were enumerated in the verified Ghidra p
 
 A second route reaches a shared fallback label after a larger on-ball arbitration tree. One observed incoming arm requests `Random(20)` and enters the fallback when the result is zero, after the preceding action/geometry checks have not selected their own return. Other branches at the same label are gated by player flags, queued-action checks, local candidate scores, and match context. Thus the helper is a conditional delivery/clearance fallback inside the action selector, not the unconditional resolution of every failed pass. The `0x8000`/`0x1000` bit meanings and the fallback's tactical meaning remain unresolved.
 
-This call-site evidence does not change the demo's 37% estimate: the action builder and some caller gates are now documented, but the demo still does not execute the native clearance path, and the scoring/trajectory outcomes remain incomplete.
+This call-site evidence does not change the demo's 38% estimate: the action builder and some caller gates are now documented, but the demo still does not execute the native clearance path, and the scoring/trajectory outcomes remain incomplete.
+
+
+### Shot-variant selection (`0x9234A0`)
+
+A focused read of the shot branch in the verified `0x9234A0` Ghidra decompilation shows that it selects a secondary shot type into `[match + 0x1A0]` and then dispatches on that selected value to build type-specific target and shot parameters. The recovered action-name map identifies the observed IDs as `300` default, `301` power, `302` placed, `303` lob, `304` free kick, `305` bicycle kick, `306–309` header variants, `310–311` “make sure” variants, `312–315` penalty variants, and `316` curled effort. This is a distinct shot-type selector layered within the broader action choice.
+
+Under the branch where `[player + 0x9C4] & 0x200` is set, the code tests `Random(10) < local_b4`. If true, `Random(3)` chooses exactly `312`, `313`, or `314`; otherwise it chooses `315`. The `local_b4` input and the bit's broader context have not been mapped, so this establishes the branch structure and bounded draw, not a calibrated probability model. In the ordinary branch, additional outcomes include explicit assignments to `303`, `302`, `301`, `300`, and header/assurance variants, gated by distance-like locals, player flag bytes, keeper state, match phase, and further bounded draws. Those locals and thresholds are not yet fully resolved.
+
+The following `switch` uses each selected type to produce distinct geometry and parameters. Thus the demo's current on-target and goal probabilities still do not reproduce the native shot path; this evidence is displayed in the checklist as recovered-but-not-implemented behavior. The checklist estimate is now 38% (mean of six rounded subsystem estimates: 35, 45, 35, 40, 30, 41).
