@@ -130,7 +130,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
         <div class="motion-readout" id="motionReadout">PLAYER PATH SAMPLES · waiting for movement</div>
         <div class="motion-readout" id="interceptReadout">PROTOTYPE INTERCEPT · waiting for ball flight</div>
       </div>
-      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. The run-on helper 0x8FE890 uses a bounded player-based random draw and bearing/vector calculations, then scans teammate time, position, and movement-deadline fields; it returns 0/1/2 and writes a derived global threshold. Another caller applies score changes of -5 for 1 and -15 for 2, but the categories still have no verified tactical names; the demo does not call it. The off-ball selector at 0x904840 scans 16-byte ball-path records from match time (or the next tick) and keeps the eligible point with the lowest score, starting from 2000. Its 0x8BCF50 reach gate combines distance, two heading changes, and time-to-arrival, with thresholds below 10 or 30 by mode; other masks filter points and adjust score. The helper can instead return a randomized 0x8BC3C0 estimate or -1 when no point qualifies, so its return is not always the selected record time; several weights and flag meanings remain unresolved. Native code later chooses 414 or 452 using the selected record's auxiliary field. Pass action 100 and related delivery states route through 0x903840: it copies the queued action context, builds a sampled ball path, and updates possession and ball-owner bookkeeping. The native worker copies source match+0x190 into match+0x14c as its designated player for flight and geometry checks; the upstream writer/selector for +0x190 is still unresolved. Selector helper 0x9160F0 also builds clearance/header target coordinates from a bounded heading and distance; observed outputs include 107 (clearance), 110 (headed clearance), and 112 (header into area), but their full decision gates are not mapped. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler computes integer progress `(timeB-timeA)*100/duration`, interpolates records with integer math, and guards against indices reaching 1000. Its mode gates and height-related fields remain unresolved. The base straight-flight segment in this demo uses the extracted 14-bit recurrence from 0x94C500 and interpolates its samples for rendering; native curvature is gated by queued +0x140 and ramps across distances 50–250, but that input is unresolved; arc height, spin, collision, and bounce remain incomplete. The shot selector has a penalty subtype branch: with `[player+0x9C4] & 0x200`, `Random(10)` is compared with a local threshold; on success `Random(3)` selects penalty power (312), placed (313), or wrong-way (314), while failure selects penalty default (315). If that bit is clear, the high bit of the same flags selects free kick (304); otherwise substate 705 selects diving header (309), then bit `0x2000` selects bicycle kick (305). The threshold inputs and broader flag meanings are unresolved. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. In the late target-geometry path of selector 0x9234A0, headings are limited around a reference by ±25 with 360-unit wrap handling, receive a bounded random adjustment on one flag-dependent path, then convert through 0x8C3810/0x8C3850 into target coordinates at context +0x1A4/+0x1A8 using magnitude +0x1B0 and pitch origin +0x6D0/+0x6D4. When two headings differ their vector offsets are averaged; a gated branch can copy coordinates directly instead. Field meanings and tactical trigger remain unknown. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Movement in this demo:</strong> player coordinates now follow timed samples built with extracted native vector values at magnitudes 25, 46 and 62 and the observed 14-bit position accumulator. These movement magnitudes and turn rates remain prototype inputs because the native source fields are not yet mapped. The display interpolates between adjacent samples; the native reader itself selects one sample by match time. Off-ball forwards now make channel runs, midfielders move to support lanes, and defenders close down or mark distinct opponents; colored rays show those current targets, while the movement phase is preserved when a moving target updates. These are explicit prototype behaviors, not recovered native weights. During flight, the demo ranks defenders by its earliest-reach estimate; it does not reproduce the native composite selector. <strong>Ball contact traced in the executable:</strong> 0x911840 selects native control/contest states from sampled ball and player context; 0x913BB0 resolves ball-arrival and goalkeeper outcomes, with 600 (not saved), 800–806 keeper outcomes, and 3 (try save next time slice) among its returns. Selector 0x9234A0 also compares turn-on-ball (202) and hold-up-ball (203) candidates with -5..4 jitter, has a layered 208 dive gate and a 213 round-keeper target path; 204 waits under flag/deadline gates, 212 is a goalkeeper override, and 1000 writes a goalkeeper timer slot at match+0x423D8+48. Foul helper 0x904030 can select labels 501–506 from heading/position gates. These native branches still use unresolved player/match fields, so this demo does not execute them.<br><strong>Still inferred:</strong> target selection, speed scaling, unknown record metadata, interception score weights, branch-specific ball-contact/keeper weights, tactical weights and shot outcomes.</div>
+      <div class="evidence"><strong>Observed in executable:</strong> around 0x9285BC, the route to action 205 (ME_PLAY_BALL_AHEAD_AND_RUN_ONTO) flips at match-field value 209: a zero helper result selects 205 below that value, a nonzero result selects it from that value onward. Otherwise, 201 requires both target deltas below 10 units; other cases use 200. The run-on helper 0x8FE890 uses a bounded player-based random draw and bearing/vector calculations, then scans teammate time, position, and movement-deadline fields; it returns 0/1/2 and writes a derived global threshold. Another caller applies score changes of -5 for 1 and -15 for 2, but the categories still have no verified tactical names; the demo does not call it. The off-ball selector at 0x904840 scans 16-byte ball-path records from match time (or the next tick) and keeps the eligible point with the lowest score, starting from 2000. Its 0x8BCF50 reach gate combines distance, two heading changes, and time-to-arrival, with thresholds below 10 or 30 by mode; other masks filter points and adjust score. The helper can instead return a randomized 0x8BC3C0 estimate or -1 when no point qualifies, so its return is not always the selected record time; several weights and flag meanings remain unresolved. Native code later chooses 414 or 452 using the selected record's auxiliary field. Pass action 100 and related delivery states route through 0x903840: it copies the queued action context, builds a sampled ball path, and updates possession and ball-owner bookkeeping. The native worker copies source match+0x190 into match+0x14c as its designated player for flight and geometry checks; the upstream writer/selector for +0x190 is still unresolved. Selector helper 0x9160F0 also builds clearance/header target coordinates from a bounded heading and distance; observed outputs include 107 (clearance), 110 (headed clearance), and 112 (header into area), but their full decision gates are not mapped. Native player positions use 28-byte timed-motion records: 0x8BD030 builds them from heading vectors and 0x8BBAC0 selects a discrete record by match time. For magnitudes below 100, the vector helpers read the 360×100 distance_angle_table.mdt grid; larger magnitudes use a separate integer-scaled branch. Shot path: 0x94C0D0 → 0x94E980 → 0x94CBB0; the builder stores four-word samples and the sampler computes integer progress `(timeB-timeA)*100/duration`, interpolates records with integer math, and guards against indices reaching 1000. Its mode gates and height-related fields remain unresolved. The ball path now uses the recovered Q14 recurrence from 0x94C500, cubic controls from 0x94BB80, and per-sample updates from 0x94C7B0. The flight worker copies match+0x184 into flight-context +0x140; initializer 0x9598D0 sets divisor +0xA0DA8 to 133. Curvature is zero for input 0 or distance below 80, ramps by (distance-80)/170 through 250, then uses the full distance-scaled input. Selector 0x9234A0 supplies signed inputs for observed 106/114 contexts and a -2..1 input for 123, from opaque player fields. The demo uses an inferred wide-cross gate and proxy input; height, spin, collision, and bounce remain incomplete. The shot selector has a penalty subtype branch: with `[player+0x9C4] & 0x200`, `Random(10)` is compared with a local threshold; on success `Random(3)` selects penalty power (312), placed (313), or wrong-way (314), while failure selects penalty default (315). If that bit is clear, the high bit of the same flags selects free kick (304); otherwise substate 705 selects diving header (309), then bit `0x2000` selects bicycle kick (305). The threshold inputs and broader flag meanings are unresolved. The selector constructs restart/delivery states 106, 108, 114, 116 and 118; a separate set-piece preparation field transitions 450 → 451 under flag and clock gates. In the late target-geometry path of selector 0x9234A0, headings are limited around a reference by ±25 with 360-unit wrap handling, receive a bounded random adjustment on one flag-dependent path, then convert through 0x8C3810/0x8C3850 into target coordinates at context +0x1A4/+0x1A8 using magnitude +0x1B0 and pitch origin +0x6D0/+0x6D4. When two headings differ their vector offsets are averaged; a gated branch can copy coordinates directly instead. Field meanings and tactical trigger remain unknown. The binary uses an MT19937-family generator; this demo uses the same generator family with a local seed.<br><strong>Movement in this demo:</strong> player coordinates now follow timed samples built with extracted native vector values at magnitudes 25, 46 and 62 and the observed 14-bit position accumulator. These movement magnitudes and turn rates remain prototype inputs because the native source fields are not yet mapped. The display interpolates between adjacent samples; the native reader itself selects one sample by match time. Off-ball forwards now make channel runs, midfielders move to support lanes, and defenders close down or mark distinct opponents; colored rays show those current targets, while the movement phase is preserved when a moving target updates. These are explicit prototype behaviors, not recovered native weights. During flight, the demo ranks defenders by its earliest-reach estimate; it does not reproduce the native composite selector. <strong>Ball contact traced in the executable:</strong> 0x911840 selects native control/contest states from sampled ball and player context; 0x913BB0 resolves ball-arrival and goalkeeper outcomes, with 600 (not saved), 800–806 keeper outcomes, and 3 (try save next time slice) among its returns. Selector 0x9234A0 also compares turn-on-ball (202) and hold-up-ball (203) candidates with -5..4 jitter, has a layered 208 dive gate and a 213 round-keeper target path; 204 waits under flag/deadline gates, 212 is a goalkeeper override, and 1000 writes a goalkeeper timer slot at match+0x423D8+48. Foul helper 0x904030 can select labels 501–506 from heading/position gates. These native branches still use unresolved player/match fields, so this demo does not execute them.<br><strong>Still inferred:</strong> target selection, speed scaling, unknown record metadata, interception score weights, branch-specific ball-contact/keeper weights, tactical weights and shot outcomes.</div>
     </div>
   </section>
 </main>
@@ -3404,7 +3404,7 @@ const field = {x:44,y:34,w:992,h:612};
 let app=null, grassView=null, runView=null, flightView=null, ballView=null, playerViews=[[],[]], pathKey="", lastStageWidth=-1, lastStageHeight=-1;
 let simAccumulator=0,fpsFrames=0,fpsWindowStart=0;
 const stateNames = {
-  100:"ME_NORMAL_PASS",103:"ME_PASS_INTO_CHANNEL",104:"ME_LONG_PASS_UP_TO_EDGE_OF_AREA",105:"ME_CROSS_BALL_TO_PLAYER",106:"ME_CROSS_INTO_AREA",120:"ME_PASS_ONE_TWO",
+  100:"ME_NORMAL_PASS",103:"ME_PASS_INTO_CHANNEL",104:"ME_LONG_PASS_UP_TO_EDGE_OF_AREA",105:"ME_CROSS_BALL_TO_PLAYER",106:"ME_CROSS_INTO_AREA",114:"ME_CORNER",120:"ME_PASS_ONE_TWO",
   200:"ME_RUN_WITH_BALL",201:"ME_CONTINUE_RUN_WITH_BALL",202:"ME_TURN_ON_BALL",203:"ME_HOLD_UP_BALL",205:"ME_PLAY_BALL_AHEAD_AND_RUN_ONTO",
   300:"ME_SHOT_TYPE_DEFAULT",400:"ME_MOVE_TO_BALL",401:"ME_CONTINUE_MOVE_TO_BALL",402:"ME_MOVE_TO_TACTIC_POS",403:"ME_MOVE_ONSIDE",404:"ME_MOVE_INTO_SPACE",407:"ME_MOVE_TO_MARK_PLAYER",414:"ME_MOVE_TO_INTERCEPT_BALL",422:"ME_MOVE_TO_CLOSE_DOWN_BALL_PLAYER",452:"ME_MOVE_TO_INTERCEPT_HIGH_BALL",703:"ME_INTERCEPT_BALL",800:"ME_SAVE_HELD",900:"ME_SLIDE_TACKLE",901:"ME_BLOCK_TACKLE"
 };
@@ -3676,7 +3676,7 @@ function syncPaths(){
   const carrier=state.carrier;
   const rkey=carrier&&carrier.runX!==null?[carrier.runX,carrier.runY].join(":"):"";
   const f=state.flight;
-  const fkey=f?[f.kind,f.start.x,f.start.y,f.end.x,f.end.y].join(":"):"";
+  const fkey=f?[f.kind,f.start.x,f.start.y,f.end.x,f.end.y,f.curveInput].join(":"):"";
   const runners=state.players.flat().filter(function(p){return p.actionCode===404||p.actionCode===407||p.actionCode===422||p.actionCode===414||p.actionCode===452;});
   const moveKey=runners.map(function(p){return [p.team,p.num,p.actionCode,Math.round(p.x*2),Math.round(p.y*2),Math.round(p.tx*2),Math.round(p.ty*2)].join(":");}).join(";");
   const key=rkey+"|"+fkey+"|"+moveKey;if(key===pathKey)return;pathKey=key;
@@ -3688,7 +3688,7 @@ function syncPaths(){
     runView.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({color:color,width:1.5,alpha:.48});
     runView.circle(b.x,b.y,2.5).fill({color:color,alpha:.55});
   });
-  if(f){const a=toPitch(f.start),b=toPitch(f.end);flightView.moveTo(a.x,a.y).quadraticCurveTo((a.x+b.x)/2,(a.y+b.y)/2+(f.kind==="shot"?-18:7),b.x,b.y).stroke({color:f.kind==="shot"?0xfff2ba:0xeaf7c8,width:2,alpha:.75});}
+  if(f){const a=toPitch(f.start),b=toPitch(f.end);flightView.moveTo(a.x,a.y);if(f.controls&&f.curveScalar!==0){const c1=toPitch(f.controls.c1),c2=toPitch(f.controls.c2);flightView.bezierCurveTo(c1.x,c1.y,c2.x,c2.y,b.x,b.y);}else flightView.lineTo(b.x,b.y);flightView.stroke({color:f.kind==="shot"?0xfff2ba:0xeaf7c8,width:2,alpha:.75});}
 }
 function syncScene(deltaMS){
   if(!app||!ballView)return;
@@ -3747,27 +3747,46 @@ async function initPixi(){
 function updateBallOnCarrier(){
   if(state.carrier&&!state.flight){state.ball.x=state.carrier.x+direction(state.carrier.team)*1.25;state.ball.y=state.carrier.y;}
 }
-// Replays only the verified straight-segment recurrence from 0x94C500.
-// Native curve, height, spin, collision, and bounce inputs are not modeled here.
-function buildNativeStraightSamples(start,end,duration){
-  const scale=0x4000,steps=Math.max(1,Math.trunc(duration));
-  const startX=Math.trunc(start.x),startY=Math.trunc(start.y);
-  const endX=Math.trunc(end.x),endY=Math.trunc(end.y);
-  const velocityScale=Math.trunc(scale/steps);
-  const velocityX=(endX-startX)*velocityScale,velocityY=(endY-startY)*velocityScale;
-  let xAcc=startX*scale,yAcc=startY*scale;
-  const samples=[{x:startX,y:startY}];
-  for(let i=0;i<steps;i++){
-    xAcc+=velocityX;yAcc+=velocityY;
-    samples.push({x:xAcc>>14,y:yAcc>>14});
+// Replays 0x94C500 → 0x94BB80 → 0x94C7B0 in Q14. Pitch display units
+// are scaled by 100 for this demo; cross selection and curve input remain inferred.
+function buildNativeBallSamples(start,end,duration,curveInput){
+  const q=0x4000,units=100,steps=Math.max(1,Math.trunc(duration));
+  const sx=Math.trunc(start.x*units),sy=Math.trunc(start.y*units),ex=Math.trunc(end.x*units),ey=Math.trunc(end.y*units);
+  const dx=ex-sx,dy=ey-sy,distance=Math.floor(Math.hypot(dx,dy));
+  let curveScalar=0;
+  if(curveInput!==0&&distance>=80){
+    curveScalar=Math.trunc(distance*curveInput/133);
+    if(distance<250)curveScalar=Math.trunc((distance-80)*curveScalar/170);
   }
-  return samples;
+  let c1x=0,c1y=0,c2x=0,c2y=0;
+  if(curveScalar!==0&&distance>0){
+    const bend=Math.trunc((curveScalar*4)/3),offsetX=Math.trunc(bend*dy/distance),offsetY=Math.trunc(bend*dx/distance);
+    c1x=sx+Math.trunc(dx/3)+offsetX;c1y=sy+Math.trunc(dy/3)-offsetY;
+    c2x=ex-Math.trunc(dx/3)+offsetX;c2y=ey-Math.trunc(dy/3)-offsetY;
+  }
+  const t=Math.trunc(q/steps),t2=(t*t)>>14,t3=(t*t2)>>14;
+  const coeff=function(p0,p1,p2,p3){
+    const second=(p0-2*p1+p2)*t2;
+    const third=(((p1-p2)*3+p3)-p0)*t3;
+    return {position:(p0*q)|0,velocity:(third+((p1-p0)*t+second)*3)|0,acceleration:((second+third)*6)|0,jerk:(third*6)|0};
+  };
+  const x=curveScalar===0?{position:(sx*q)|0,velocity:(dx*t)|0,acceleration:0,jerk:0}:coeff(sx,c1x,c2x,ex);
+  const y=curveScalar===0?{position:(sy*q)|0,velocity:(dy*t)|0,acceleration:0,jerk:0}:coeff(sy,c1y,c2y,ey);
+  let xAcc=x.position,yAcc=y.position,xVel=x.velocity,yVel=y.velocity,xAccel=x.acceleration,yAccel=y.acceleration;
+  const samples=[{x:(xAcc>>14)/units,y:(yAcc>>14)/units}];
+  for(let i=0;i<steps;i++){
+    xAcc=(xAcc+xVel)|0;yAcc=(yAcc+yVel)|0;xVel=(xVel+xAccel)|0;yVel=(yVel+yAccel)|0;
+    xAccel=(xAccel+x.jerk)|0;yAccel=(yAccel+y.jerk)|0;
+    samples.push({x:(xAcc>>14)/units,y:(yAcc>>14)/units});
+  }
+  return {samples,curveScalar,controls:curveScalar===0?null:{c1:{x:c1x/units,y:c1y/units},c2:{x:c2x/units,y:c2y/units}}};
 }
 function startFlight(team,kind,end,target,meta){
   const start={x:state.ball.x,y:state.ball.y};
   const duration=kind==="shot"?7:Math.max(4,Math.min(9,Math.round(dist(start,end)/5)));
   const passer=state.carrier;
-  state.flight={team:team,kind:kind,start:start,end:{x:end.x,y:end.y},samples:buildNativeStraightSamples(start,end,duration),target:target,meta:Object.assign({},meta||{},{passer:passer}),progress:0,duration:duration};
+  const curveInput=(meta&&meta.nativeCurveInput)||0,path=buildNativeBallSamples(start,end,duration,curveInput);
+  state.flight={team:team,kind:kind,start:start,end:{x:end.x,y:end.y},samples:path.samples,controls:path.controls,curveInput:curveInput,curveScalar:path.curveScalar,target:target,meta:Object.assign({},meta||{},{passer:passer}),progress:0,duration:duration};
   state.carrier=null;
   buildFlightTargets();
 }
@@ -3799,7 +3818,7 @@ function updateFlight(deltaMS){
   const sampleBlend=sampleTime-sampleIndex,a=f.samples[sampleIndex],b=f.samples[sampleIndex+1];
   const t=clamp(f.progress/f.duration,0,1);
   state.ball.x=a.x+(b.x-a.x)*sampleBlend;
-  state.ball.y=a.y+(b.y-a.y)*sampleBlend+Math.sin(t*Math.PI)*(f.kind==="shot"?-1.2:.45);
+  state.ball.y=a.y+(b.y-a.y)*sampleBlend;
   if(t<1)return;
   if(f.kind==="shot"){resolveShot(f);updateReadout();return;}
   state.flight=null;state.carrier=f.target;
@@ -3854,7 +3873,10 @@ function decideWithBall(){
   }
   if(receiver&&passScore>runScore+.035){
     const through=receiver.forward>9&&receiver.lane>.58&&receiver.d>11;
-    const code=through?205:($("passing").value==="long"&&receiver.d>25?104:100);
+    const relativeX=direction(team)>0?p.x:100-p.x,wide=p.y<16||p.y>48;
+    const prototypeCross=$("passing").value==="long"&&wide&&relativeX>42&&receiver.forward>8;
+    const code=prototypeCross?106:(through?205:($("passing").value==="long"&&receiver.d>25?104:100));
+    const curveSign=receiver.p.y<p.y?1:-1,curveInput=prototypeCross?Math.floor(randInt(14)/4)*curveSign:0;
     const interceptChance=clamp(.08+receiver.d/105+pressure*.23-(p.attrs.passing/20)*.13,0,.62);
     let target=receiver.p,intercepted=false;
     if(rand()<interceptChance){
@@ -3862,8 +3884,8 @@ function decideWithBall(){
       if(near.p){target=near.p;intercepted=true;}
     }
     state.passes[team]++;
-    startFlight(team,"pass",{x:target.x,y:target.y},target,{intercepted:intercepted,pressure:pressure,lane:lane});
-    setTrace(p,code,through?"Forward space is available, so the prototype plays ahead for a runner.":"Receiver and passing lane score above the run option.",metrics);
+    startFlight(team,"pass",{x:target.x,y:target.y},target,{intercepted:intercepted,pressure:pressure,lane:lane,nativeCurveInput:curveInput});
+    setTrace(p,code,prototypeCross?"Prototype wide-cross gate selected action 106. The ball uses the recovered native Q14 curve construction; its opaque source field is represented by a demo input.":(through?"Forward space is available, so the prototype plays ahead for a runner.":"Receiver and passing lane score above the run option."),metrics);
     event(playerLabel(p)+' passes to '+playerLabel(receiver.p)+' · '+(stateNames[code]||"ME_NORMAL_PASS")+' ['+code+']',team);
     updateReadout();return;
   }
