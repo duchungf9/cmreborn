@@ -92,10 +92,10 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
   <details class="reverse-panel" open>
     <summary><span><b>ENGINE REVERSE CHECKLIST</b><small> Ước tính tiến độ phân tích: 42% · cập nhật 23/11/2026</small></span><span class="reverse-pill">42%</span></summary>
     <div class="reverse-meter" role="img" aria-label="Ước tính 42 phần trăm phạm vi match engine đã được reverse tĩnh"><i></i></div>
-    <p class="reverse-method">Ước tính thủ công: trung bình 6 mảng bên dưới (làm tròn: 41,8% → 42%). “Một phần” nghĩa là đã lần được nhánh native cụ thể nhưng còn thiếu điều kiện, trọng số hoặc đối chiếu runtime. Đây không phải phần trăm mã nguồn đã dịch hay mức tương đương toàn game.</p>
+    <p class="reverse-method">Ước tính thủ công: trung bình 6 mảng bên dưới (làm tròn: 42,2% → 42%). “Một phần” nghĩa là đã lần được nhánh native cụ thể nhưng còn thiếu điều kiện, trọng số hoặc đối chiếu runtime. Đây không phải phần trăm mã nguồn đã dịch hay mức tương đương toàn game.</p>
     <ul class="reverse-checklist">
       <li><span class="partial-mark">◐</span><span><b>Chọn và chuyển action</b><small>Đã lần một số nhánh chọn action, tie-break và state update; arbitration đầy đủ còn thiếu.</small></span><em>một phần · 35%</em></li>
-      <li><span class="partial-mark">◐</span><span><b>Di chuyển cầu thủ / off-ball</b><small>Action 214: caller 0x918740 qua gate trạng thái/áp lực/ngẫu nhiên; 0x8FEF30 quét ±1 hoặc ±2 ô, lọc theo mask, điều chỉnh điểm theo mật độ hai đội và hình học rồi yêu cầu vượt ngưỡng. Grid 12×18 và tâm ô đã rõ. Mask/helper còn thiếu; demo vẫn dùng proxy.</small></span><em>một phần · 58%</em></li>
+      <li><span class="partial-mark">◐</span><span><b>Di chuyển cầu thủ / off-ball</b><small>Action 214: caller 0x918740 qua gate trạng thái/áp lực/ngẫu nhiên; 0x8FEF30 quét ±1 hoặc ±2 ô, lọc theo mask, điều chỉnh điểm theo mật độ hai đội và hình học rồi yêu cầu vượt ngưỡng. Grid 12×18 và tâm ô đã rõ. Action 205 dùng mask 0x2 rồi kiểm tra hướng ≤37/45; demo đưa bóng vào khoảng trống cho người chuyền chạy đón bằng grid/điểm proxy. Mask/helper còn thiếu.</small></span><em>một phần · 60%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Chuyền, sút, tình huống cố định</b><small>Set-piece: action 1602 dùng occupancy và profile chiến thuật theo +0x831 để chọn đích. Slot/weights còn thiếu; penalty 312–315 và kết quả sút vẫn là proxy.</small></span><em>một phần · 44%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Quỹ đạo bóng / va chạm</b><small>0x94E980 tạo mẫu quỹ đạo 16 byte, nối shot handler 0x92DF20; công thức bay/contact còn thiếu và demo vẫn dùng proxy.</small></span><em>một phần · 43%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Thủ môn / kết quả bóng</b><small>Đã tìm một số mã save, control, deflect và wait; trọng số, điều kiện đầy đủ còn thiếu.</small></span><em>một phần · 30%</em></li>
@@ -3925,7 +3925,10 @@ function updateFlight(deltaMS){
     event(playerLabel(state.carrier)+' intercepts · ME_INTERCEPT_BALL [703]',state.carrier.team);
   }else{
     state.carrier.nextDecision=state.tick+4+randInt(3);
-    event(playerLabel(f.target)+' receives the pass',f.team);
+    if(f.meta.runOnto){
+      setTrace(state.carrier,205,"Passer reaches the forward ball target · normalized grid and target weights remain demo proxies.",{pressure:f.meta.pressure||0,lane:f.meta.lane||0,shot:0});
+      event(playerLabel(state.carrier)+' runs onto the ball · ME_PLAY_BALL_AHEAD_AND_RUN_ONTO [205]',f.team);
+    }else event(playerLabel(f.target)+' receives the pass',f.team);
   }
   updateReadout();
 }
@@ -3943,6 +3946,30 @@ function chooseReceiver(p,team,pressure){
     return {p:q,d:d,forward:forward,lane:lane,score:score};
   }).filter(function(o){return o.d<48&&o.forward>-11;}).sort(function(a,b){return b.score-a.score;});
   return options[0]||null;
+}
+function chooseForwardRunTarget(p,receiver,team){
+  // Native action 205 uses selector 0x8FEF30 and direction checks; this normalized pitch grid and score are proxies.
+  const dir=direction(team),relativeX=dir>0?p.x:100-p.x,relativeY=team===0?p.y:64-p.y;
+  const cellX=clamp(Math.floor(relativeX*12/100),0,11),cellY=clamp(Math.floor(relativeY*18/64),0,17);
+  const opponents=state.players[1-team].filter(function(o){return o.role!=="GK";});
+  const candidates=[];
+  for(let gx=Math.max(0,cellX-1);gx<=Math.min(11,cellX+1);gx++){
+    for(let gy=Math.max(0,cellY-1);gy<=Math.min(17,cellY+1);gy++){
+      const point=world(team,(gx+.5)*100/12,(gy+.5)*64/18);
+      const forward=dir*(point.x-p.x),distance=dist(p,point);
+      if(forward<2||distance<2||distance>20)continue;
+      const bearing=((Math.round(Math.atan2(point.x-p.x,point.y-p.y)*180/Math.PI)%360)+360)%360;
+      const headingError=nativeHeadingDifference(p.motionHeading||0,bearing);
+      // The native path checks direction against a side reference and player's heading; the 37°/45° display gates are proxies.
+      if(headingError>45)continue;
+      let clearance=99;opponents.forEach(function(o){clearance=Math.min(clearance,dist(o,point));});
+      const open=clamp(clearance/12,0,1),progress=clamp(forward/18,0,1),link=clamp(1-dist(receiver,point)/26,0,1);
+      const score=.52*open+.28*progress+.20*link;
+      candidates.push({point:point,score:score,headingError:headingError,cellX:gx,cellY:gy});
+    }
+  }
+  candidates.sort(function(a,b){return b.score-a.score;});
+  return candidates[0]||null;
 }
 function decideWithBall(){
   const p=state.carrier;if(!p)return;
@@ -3971,21 +3998,27 @@ function decideWithBall(){
     updateReadout();return;
   }
   if(receiver&&passScore>runScore+.035){
-    const through=receiver.forward>9&&receiver.lane>.58&&receiver.d>11;
+    let through=receiver.forward>9&&receiver.lane>.58&&receiver.d>11;
     const relativeX=direction(team)>0?p.x:100-p.x,wide=p.y<16||p.y>48;
     const prototypeCross=$("passing").value==="long"&&wide&&relativeX>42&&receiver.forward>8;
-    const code=prototypeCross?106:(through?205:($("passing").value==="long"&&receiver.d>25?104:100));
+    const runTarget=through&&!prototypeCross?chooseForwardRunTarget(p,receiver.p,team):null;
+    through=through&&!!runTarget;
+    const runOnto=through&&!prototypeCross;
+    const code=prototypeCross?106:(runOnto?205:($("passing").value==="long"&&receiver.d>25?104:100));
     const curveSign=receiver.p.y<p.y?1:-1,curveInput=prototypeCross?Math.floor(randInt(14)/4)*curveSign:0;
-    const interceptChance=clamp(.08+receiver.d/105+pressure*.23-(p.attrs.passing/20)*.13,0,.62);
-    let target=receiver.p,intercepted=false;
+    const deliveryPoint=runOnto?runTarget.point:receiver.p;
+    const deliveryDistance=dist(p,deliveryPoint);
+    const interceptChance=clamp(.08+deliveryDistance/105+pressure*.23-(p.attrs.passing/20)*.13,0,.62);
+    let target=runOnto?p:receiver.p,intercepted=false;
     if(rand()<interceptChance){
-      const near=getNearest(1-team,{x:(p.x+receiver.p.x)/2,y:(p.y+receiver.p.y)/2},true);
+      const near=getNearest(1-team,{x:(p.x+deliveryPoint.x)/2,y:(p.y+deliveryPoint.y)/2},true);
       if(near.p){target=near.p;intercepted=true;}
     }
     state.passes[team]++;
-    startFlight(team,"pass",{x:target.x,y:target.y},target,{intercepted:intercepted,pressure:pressure,lane:lane,nativeCurveInput:curveInput});
-    setTrace(p,code,(prototypeCross?"Prototype wide-cross gate selected action 106. The ball uses the recovered native Q14 curve construction; its opaque source field is represented by a demo input.":(through?"Forward space is available, so the prototype plays ahead for a runner.":"Receiver and passing lane score above the run option."))+" "+pressureNote,metrics);
-    event(playerLabel(p)+' passes to '+playerLabel(receiver.p)+' · '+(stateNames[code]||"ME_NORMAL_PASS")+' ['+code+']',team);
+    startFlight(team,"pass",deliveryPoint,target,{intercepted:intercepted,runOnto:runOnto,pressure:pressure,lane:lane,nativeCurveInput:curveInput});
+    const runNote=runOnto?"Action 205 now sends the ball into a forward space and makes the passer run onto it. Native selector 0x8FEF30 and heading checks are known; the demo's normalized 12×18 grid mapping and candidate weights are proxies.":"Receiver and passing lane score above the run option.";
+    setTrace(p,code,(prototypeCross?"Prototype wide-cross gate selected action 106. The ball uses the recovered native Q14 curve construction; its opaque source field is represented by a demo input.":runNote)+" "+pressureNote,metrics);
+    event(runOnto?playerLabel(p)+' plays into space and runs onto it · '+stateNames[code]+' ['+code]:playerLabel(p)+' passes to '+playerLabel(receiver.p)+' · '+(stateNames[code]||"ME_NORMAL_PASS")+' ['+code],team);
     updateReadout();return;
   }
   if(pressure>.68&&p.attrs.dribbling<13){
