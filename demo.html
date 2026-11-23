@@ -30,6 +30,8 @@ button,select{font:inherit;color:inherit}
 .pixi-host{width:100%;aspect-ratio:1080/680;display:block;overflow:hidden;background:#153e2a}
 .pixi-host canvas{width:100%;height:100%;display:block}
 .pitch-status{position:absolute;left:14px;top:12px;display:flex;gap:8px;align-items:center;pointer-events:none}
+.fps-badge{position:absolute;right:12px;top:10px;padding:5px 8px;border:1px solid #ffffff25;border-radius:7px;background:#07110dcc;color:#bfe8d0;font:11px ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;pointer-events:none}
+.fps-badge.low{color:#ffd08a}
 .live-dot{width:7px;height:7px;border-radius:50%;background:#6be28a;box-shadow:0 0 10px #6be28a;animation:pulse 1.4s infinite}
 .status-text{font-size:11px;letter-spacing:.09em;text-transform:uppercase;text-shadow:0 1px 3px #000}
 .run-legend{position:absolute;right:12px;bottom:10px;display:flex;gap:10px;padding:6px 8px;border:1px solid #ffffff25;border-radius:7px;background:#07110dcc;color:#e0ece2;font-size:10px;pointer-events:none}
@@ -76,7 +78,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
       <div class="brand-mark" aria-hidden="true">CM</div>
       <div><div class="brand-name">MATCH ENGINE STUDY</div><div class="brand-sub">Championship Manager 03/04 · 2D tactical match view</div></div>
     </div>
-    <div class="build-tag">RECONSTRUCTED PROTOTYPE · BUILD 4.2</div>
+    <div class="build-tag">RECONSTRUCTED PROTOTYPE · BUILD 4.3</div>
   </header>
 
   <section class="scorebar" aria-label="Match scoreboard">
@@ -90,6 +92,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
     <div class="pitch-wrap">
       <div id="pitch" class="pixi-host" role="img" aria-label="Top-down animated football pitch with 22 players and ball"><span style="padding:18px;color:#e5ecec">Loading match view…</span></div>
       <div class="pitch-status"><span class="live-dot" id="liveDot"></span><span class="status-text" id="matchStatus">MATCH SIMULATION</span></div>
+      <div class="fps-badge" id="fpsReadout" aria-live="off">FPS — / target 120</div>
       <div class="run-legend" aria-label="Movement intent legend"><span><i class="space"></i>Space run</span><span><i class="mark"></i>Mark</span><span><i class="press"></i>Press / intercept</span></div>
     </div>
     <div class="controlbar" aria-label="Match controls and tactics">
@@ -3399,7 +3402,7 @@ const pitchHost = $("pitch");
 const W = 1080, H = 680;
 const field = {x:44,y:34,w:992,h:612};
 let app=null, grassView=null, runView=null, flightView=null, ballView=null, playerViews=[[],[]], pathKey="", lastStageWidth=-1, lastStageHeight=-1;
-let simAccumulator=0;
+let simAccumulator=0,fpsFrames=0,fpsWindowStart=0;
 const stateNames = {
   100:"ME_NORMAL_PASS",103:"ME_PASS_INTO_CHANNEL",104:"ME_LONG_PASS_UP_TO_EDGE_OF_AREA",105:"ME_CROSS_BALL_TO_PLAYER",106:"ME_CROSS_INTO_AREA",120:"ME_PASS_ONE_TWO",
   200:"ME_RUN_WITH_BALL",201:"ME_CONTINUE_RUN_WITH_BALL",202:"ME_TURN_ON_BALL",203:"ME_HOLD_UP_BALL",205:"ME_PLAY_BALL_AHEAD_AND_RUN_ONTO",
@@ -3719,7 +3722,7 @@ async function initPixi(){
   await app.init({width:W,height:H,resizeTo:pitchHost,backgroundColor:0x153e2a,antialias:false,autoDensity:true,resolution:Math.min(1.25,window.devicePixelRatio||1),powerPreference:"high-performance",preference:"webgl",autoStart:false});
   pitchHost.replaceChildren(app.canvas);app.canvas.setAttribute("role","img");app.canvas.setAttribute("aria-label","Animated 2D football match with 22 players and ball");
   makePitch();addPlayerViews();
-  app.ticker.maxFPS=60;app.ticker.minFPS=15;
+  app.ticker.maxFPS=120;app.ticker.minFPS=30;
   app.ticker.add(function(ticker){
     const frameMS=Math.min(120,ticker.deltaMS||33);
     if(state.running){
@@ -3729,6 +3732,15 @@ async function initPixi(){
       if(state.flight)updateFlight(frameMS*state.speed);
     }
     syncScene(frameMS);
+    fpsFrames++;
+    const fpsNow=performance.now();
+    if(!fpsWindowStart)fpsWindowStart=fpsNow;
+    const fpsElapsed=fpsNow-fpsWindowStart;
+    if(fpsElapsed>=500){
+      const measured=Math.round(fpsFrames*1000/fpsElapsed),badge=$("fpsReadout");
+      badge.textContent="FPS "+measured+" / target 120";badge.classList.toggle("low",measured<110);
+      fpsFrames=0;fpsWindowStart=fpsNow;
+    }
   });
   if(state.running)app.start();else app.stop();draw();setRunTimer();
 }
@@ -3916,7 +3928,7 @@ function setRunTimer(){
   $("playBtn").setAttribute("aria-label",state.running?"Pause match":"Play match");
   $("liveDot").style.opacity=state.running?"1":".25";
   if(state.clockSeconds<5400)$("matchStatus").textContent=state.running?"MATCH SIMULATION":"PAUSED";
-  if(app){if(state.running)app.start();else app.stop();}
+  if(app){fpsFrames=0;fpsWindowStart=performance.now();if(state.running)app.start();else app.stop();}
 }
 function freshMatch(){
   state.tick=0;state.clockSeconds=0;state.half=0;state.score=[0,0];state.shots=[0,0];state.passes=[0,0];state.flight=null;state.goalWait=0;
