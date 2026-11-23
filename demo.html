@@ -90,12 +90,12 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
   </section>
 
   <details class="reverse-panel" open>
-    <summary><span><b>ENGINE REVERSE CHECKLIST</b><small> Ước tính tiến độ phân tích: 40% · cập nhật 23/11/2026</small></span><span class="reverse-pill">40%</span></summary>
-    <div class="reverse-meter" role="img" aria-label="Ước tính 40 phần trăm phạm vi match engine đã được reverse tĩnh"><i></i></div>
+    <summary><span><b>ENGINE REVERSE CHECKLIST</b><small> Ước tính tiến độ phân tích: 41% · cập nhật 23/11/2026</small></span><span class="reverse-pill">41%</span></summary>
+    <div class="reverse-meter" role="img" aria-label="Ước tính 41 phần trăm phạm vi match engine đã được reverse tĩnh"><i></i></div>
     <p class="reverse-method">Ước tính thủ công theo 6 mảng bên dưới; “một phần” nghĩa là đã lần được nhánh native cụ thể nhưng còn thiếu điều kiện, trọng số hoặc đối chiếu runtime. Đây không phải phần trăm mã nguồn đã dịch hay mức tương đương toàn game.</p>
     <ul class="reverse-checklist">
       <li><span class="partial-mark">◐</span><span><b>Chọn và chuyển action</b><small>Đã lần một số nhánh chọn action, tie-break và state update; arbitration đầy đủ còn thiếu.</small></span><em>một phần · 35%</em></li>
-      <li><span class="partial-mark">◐</span><span><b>Di chuyển cầu thủ / off-ball</b><small>0x918740 có nhánh tạo action 214 và target qua lưới 12×18 của 0x8FEF30; 0x8FE890 đặt flag 0x4000 theo kết quả. Trọng số còn thiếu; demo vẫn dùng proxy.</small></span><em>một phần · 49%</em></li>
+      <li><span class="partial-mark">◐</span><span><b>Di chuyển cầu thủ / off-ball</b><small>Ô lưới native 12×18 đã rõ: tâm ô, danh sách tối đa 11 cầu thủ mỗi bên, bộ chọn target action 214. Trọng số chọn ô còn thiếu; demo vẫn dùng proxy.</small></span><em>một phần · 52%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Chuyền, sút, tình huống cố định</b><small>Penalty gate: 0x8EDE60 lấy base từ player+0xC14 rồi random hóa; local_b4 còn có gate khác. Kiểu 312–315 có recipe riêng nhưng demo chưa chạy; kết quả sút vẫn là proxy.</small></span><em>một phần · 42%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Quỹ đạo bóng / va chạm</b><small>0x94E980 tạo mẫu quỹ đạo 16 byte, nối shot handler 0x92DF20; công thức bay/contact còn thiếu và demo vẫn dùng proxy.</small></span><em>một phần · 43%</em></li>
       <li><span class="partial-mark">◐</span><span><b>Thủ môn / kết quả bóng</b><small>Đã tìm một số mã save, control, deflect và wait; trọng số, điều kiện đầy đủ còn thiếu.</small></span><em>một phần · 30%</em></li>
