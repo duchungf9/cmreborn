@@ -182,3 +182,12 @@ In the non-keeper branch the routine writes action `0x6B`/107 (`ME_CLEARANCE`) t
 The keeper-flag branch writes action `110` or `112` according to a branch byte, constructs target and distribution parameters in match-context fields `+0x160–+0x18C`, and retries candidate geometry under its own filters. It uses bounded draws including `[player + 0xB90] + 5` and `[player + 0xBE8] + 2`; the attribute meanings remain unknown. Both construction paths eventually publish the selected action through `[player + 0x8CC]`, clear the player target slots, set movement mode `0x10`, and set action timing from `[player + 0x9BC] + 100`. This closes more of the delivery builder's output contract, but not the upstream choice to enter it, the full candidate ranking, or the downstream ball-flight/contact results.
 
 The playable demo does not yet execute this clearance/keeper builder. Its checklist now calls that out explicitly; the visible simulation still uses proxy pass/shot outcomes and must not be mistaken for this native branch.
+
+
+### Clearance-builder caller gates in the action selector (`0x9234A0`)
+
+The selector's references to `0x9160F0` were enumerated in the verified Ghidra project: call sites `0x9243B0` and `0x929FC4`, both with second argument `1`. One direct route requires `[player + 0x9C4] & 0x1000`, `0x8FA7E0() > 300`, and the sign bit of the high byte of `[player + 0x9C4]` (mask `0x8000`); it immediately calls the helper and returns. If that last bit is clear, selection continues through additional queued-action and predicate checks.
+
+A second route reaches a shared fallback label after a larger on-ball arbitration tree. One observed incoming arm requests `Random(20)` and enters the fallback when the result is zero, after the preceding action/geometry checks have not selected their own return. Other branches at the same label are gated by player flags, queued-action checks, local candidate scores, and match context. Thus the helper is a conditional delivery/clearance fallback inside the action selector, not the unconditional resolution of every failed pass. The `0x8000`/`0x1000` bit meanings and the fallback's tactical meaning remain unresolved.
+
+This call-site evidence does not change the demo's 37% estimate: the action builder and some caller gates are now documented, but the demo still does not execute the native clearance path, and the scoring/trajectory outcomes remain incomplete.
