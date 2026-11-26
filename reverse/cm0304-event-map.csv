@@ -9,3 +9,6 @@ code_decimal,code_hex,event_index,event_key,english_ingame_text
 8544,0x2160,544,EVENT_IN_LEFT_ATTACK,<p1> has the ball on the left wing
 8545,0x2161,545,EVENT_IN_CENTRAL_ATTACK,<p1> is <d> yards from goal
 8546,0x2162,546,EVENT_IN_RIGHT_ATTACK,<p1> has the ball on the right wing
+8193,0x2001,193,EVENT_SHOOTOUT_SCORED,GOAL FOR <tc> !
+8196,0x2004,196,EVENT_WIN_THE_SHOOTOUT,<t> win the shootout !!
+8200,0x2008,200,EVENT_MISSED_IN_SHOOTOUT,But <p1> misses !!
