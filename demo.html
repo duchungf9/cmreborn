@@ -93,7 +93,7 @@ select{background:#172328;border:1px solid #34474d;border-radius:7px;padding:7px
     <summary><span><b>ENGINE REVERSE CHECKLIST</b><small> Ước tính tiến độ phân tích: 58% · cập nhật 26/11/2026</small></span><span class="reverse-pill">58%</span></summary>
     <div class="reverse-meter" role="img" aria-label="Ước tính 58 phần trăm phạm vi match engine đã được reverse tĩnh"><i></i></div>
     <p class="reverse-method">Ước tính thủ công: (59+96+54+52+34+52)/6 = 57,8%, làm tròn thành 58%. “Một phần” nghĩa là đã lần được nhánh native cụ thể nhưng còn thiếu điều kiện, trọng số hoặc đối chiếu runtime. Đây không phải phần trăm mã nguồn đã dịch hay mức tương đương toàn game.</p>
-    <p class="reverse-method">Đối chiếu internet: chưa tìm thấy bản reverse source-level cho CM 03/04. Có dự án decompile CM 01/02 nhưng là engine khác; chỉ tham khảo cách đo tiến độ, không lấy công thức của nó áp vào đây. <a href="https://github.com/alondero/cm0102-decomp" target="_blank" rel="noopener">CM0102 decomp (engine khác)</a> · <a href="https://github.com/phant0um/cmanager" target="_blank" rel="noopener">CM03/04-style Go simulation (viết mới)</a> · <a href="https://gamefaqs.gamespot.com/pc/918869-championship-manager-season-0304/faqs/81791" target="_blank" rel="noopener">CM03/04 guide (quan sát người chơi)</a>. Decompile mới 0x904840 khôi phục thêm nhánh score/reachability của mẫu bóng và chuỗi fallback; vẫn thiếu nghĩa field, một số gate và đối chiếu runtime.</p>
+    <p class="reverse-method">Đối chiếu internet: chưa thấy bản reverse source-level cho CM 03/04. CM0102 decomp là bản 01/02 khác engine/version; <a href="https://github.com/phant0um/cmanager" target="_blank" rel="noopener">cmanager</a> tự ghi là mô phỏng viết mới lấy cảm hứng CM03/04; <a href="https://github.com/crystal-cpp/CFM-1" target="_blank" rel="noopener">CFM-1</a> có mô phỏng 2D thời gian thực 22 cầu thủ; <a href="https://github.com/openfootmanager/openfootmanager/blob/develop/docs/MATCH_SIMULATION.md" target="_blank" rel="noopener">OpenFoot Manager</a> mô tả engine live theo vùng và chuỗi sự kiện. Chúng chỉ gợi ý giả thuyết thiết kế, không xác nhận luật native. Mô hình đội hình, pressing, marking, support runs và steering trong demo vừa được làm rõ hơn theo hướng đó, nhưng vẫn là suy luận và không làm tăng % reverse. <a href="https://github.com/alondero/cm0102-decomp" target="_blank" rel="noopener">CM0102 decomp</a> · <a href="https://github.com/PhilipArmstead/FM-24-Match-Harness" target="_blank" rel="noopener">FM24 harness</a> (chạy game gốc, không công khai engine source). Native 0x904840 vẫn thiếu nghĩa field, một số gate và đối chiếu runtime.</p>
     <p class="reverse-method"><b>RNG native đã lần tới constructor match:</b> `0x8DE850` gọi `0x9749A0` trên member `match+0x427B8`; constructor này lấy hai giá trị C `rand()`, lấy modulo 100000 rồi seed bộ MT. `0x8BCA20` gửi từng kết quả qua recorder `0x59A760`; `match+0x4317C` là cursor MT (đếm lùi trong khối 624 từ 624 về 0 rồi twist), không phải số kết quả đã ghi. Demo vẫn dùng seed cố định `0x03040417`, nên tái lập được demo nhưng chưa khớp chuỗi RNG native (nguồn `srand(time(NULL))` và hai giá trị `rand()` chưa biết).</p>
     <ul class="reverse-checklist">
       <li><span class="partial-mark">◐</span><span><b>Chọn và chuyển action</b><small>0x906ED0 có các proposal 102–106, 109, 111–114, 116–119, 122; 0x8D2330 duyệt roster tại side[player+0x70]+0x534, lọc state +0x8A6=1; mỗi entry có time gate từ (+0xBB0+2)/3+19. Điểm cộng dồn tới >10, mã trả sớm 20/40; caller dùng cutoff theo trạng thái. Nhánh 102 chấm proposal bằng kết quả này. Proposal 103 dùng occupancy grid 12×18 cập nhật theo match tick, target edge-lane và risk mode 8; cone heading dùng +0xC4C/+0xC50/+0xBD0, bearing native tra angle_lookup_table (300×400; round atan2(dx,dy) trên ô hợp lệ; sai số <0,5°) sau khi lượng tử hóa vector. Clamp cuối hàm còn cho phép index x=300/y=400 ngoài kích thước payload, chưa xác minh được đường biên. Low-risk override: player flag +0x9C4&0x1000 hoặc gate 0x8FDB70; gate trace phase D3/D4, pressure +0x8B0, state bits, end-zone/heading predicates và context suppressor. Pressure dùng si_sqrt_table 50.000 mục đã đối chiếu với floor(sqrt(i)); heading của proposal tra angle_lookup_table 300×400, trả các mã 0–359. Cone, movement state và random reductions cũng tác động vào điểm. Các field labels/công thức toàn cây còn thiếu. `0x9234A0` chỉ cập nhật +0x9BC khi mask +0x9C4&0xFC0 bằng 0: v=drawA×drawB+floor(old +0x9BC/2)−g (drawA, drawB độc lập, cùng bound +0xBD0+2), g bắt đầu từ +0x8B0 và bị state/context gate điều chỉnh; nếu v vượt match+0xA0D90 thì lưu floor(v/10)+limit (soft compression, không hard cap). +0x9BC còn được copy từ +0x8C8 và giảm 50 trong wait path. Ý nghĩa field/gate vẫn chưa rõ; demo chưa mô phỏng. Mode 0x4/0x8 chọn predicate vùng Y; 0x8FA690 true ở Y≤299 hoặc Y>height−300 tùy side, 0x8FA720 dùng 449/height−450; 0x8EC770 dùng end band 150 và dải biên X=120. Bit 0x40/0x10/0x82 đổi nhánh lọc/quỹ đạo. Nhánh khi match+0x190!=0, +0x194=0 cap local_84 tại B+25 và local_74 tại B+50 (B=+0x194×50); gate end-band có thể cap local_c8 tại B+40+local_98; local_98=Random(player+0xBEC+2), nhánh side/position nâng floor lên max(floor(+0xBEC/2),5). Ứng viên action 202 local_74 còn được chấm theo nhánh state/geometry: có thể seed/floor 100; một nhánh dùng T=(300−local_b8)×10−[max(local_98,floor(local_c8/500))×local_c8]/(10×N+5)−local_a4; local_b8=[player+0x8B0] unless [player+0x9C4]&0x200 (then 0; some gates may raise it to 1), N=[player+0x8B9] do 0x8FA9D0 đếm từ roster entry có dist²<22500, dist<100 và bearing-difference+dist<150. 0x8BB7A0(player) trả Y=0 hoặc [player+0x78] theo +0x5B; kết hợp x=[player+0x80] tạo điểm trên mép sân, và các hằng số đã push là đối số cho lần gọi 0x8BFA00 sau đó. 0x8BFA00 trả true nếu sai lệch heading ngắn nhất tới bearing target ≤ arg/2 (270→135°, 90→45°). Ý nghĩa chiến thuật/đơn vị của các giá trị còn chưa rõ. Bộ đếm +0x8B9/+0x8BA còn đi vào 0x911550 để lập R=max(0,6−[team+0x56C]−N−specialCount), gọi 0x904210 và ghi kết quả vào player+0x9C0/+0x9C1; assembly đã khôi phục đủ 4 stack arg của 0x904210; 0x8FE770 từ chối khi roster competitor có d_entry+d_sep/(floor(pressure/5)+3) < d_self−margin. Cờ/thao tác đã map, tên tactical chưa biết. Ứng viên action 203 local_84: 2×Random(player+0xBB8+2)−200+player+0x9BC; boost lên max(score+500,500) nếu Random(player+0xBF4+2)≠0 và +0xC6C&0x800; khi pressure=0 có thể cộng +0x9BC−100+Random(500), hoặc force 1000 qua team instruction, mask +0xC68 và pressure gates. Geometry/helper semantics còn mở. Dispatcher action 203: event 0x215A–0x215C=trái/giữa/phải hàng thủ; 0x215D–0x215F=trái/giữa/phải trung tuyến; 0x2160–0x2162=trái/giữa/phải tấn công; 8000=EVENT_WAIT (“holds up the ball”). 0x8C7C50 chặn lặp cùng event trong cửa sổ 160 match tick; sau đó lưu +0x9BC, snapshot target +0x8BC→+0x8E4 và hẹn tick+1. Demo chưa port.</small></span><em>một phần · 59%</em></li>
@@ -3586,52 +3586,60 @@ function buildTargets(){
     const nearest=opponents.map(function(p){return {p:p,d:dist(p,carrier)};}).sort(function(a,b){return a.d-b.d;});
     const relativeBallX=dir>0?carrier.x:100-carrier.x;
     const relativeBallY=team===0?carrier.y:64-carrier.y;
-    if(has){
-      const backLine=opponents.map(function(o){return dir>0?o.x:100-o.x;}).sort(function(a,b){return b-a;});
-      const mids=base.filter(function(q){return q.role==="M";}).slice().sort(function(a,b){return dist(a,carrier)-dist(b,carrier);});
-      base.forEach(function(p){
-        if(p===carrier){p.actionCode=state.lastDecision&&state.lastDecision.p===p?state.lastDecision.code:100;return;}
-        if(!offballDecisionDue(p))return;
-        if(p.role==="GK"){
-          setPlayerTarget(p,world(team,4,clamp(relativeBallY*.35+32*.65,24,40)),402);return;
-        }
+    const ownGoalY=32;
+    const pressCount=has?0:($("pressing").value==="always"?3:(relativeBallX<62?2:1));
+    const backLine=opponents.map(function(o){return dir>0?o.x:100-o.x;}).sort(function(a,b){return b-a;});
+    const mids=base.filter(function(p){return p.role==="M";}).slice().sort(function(a,b){return dist(a,carrier)-dist(b,carrier);});
+    const lineDepth=clamp(relativeBallX-(has?12:9),12,88);
+    const horizontalShift=has?clamp((relativeBallX-50)*.18,-6,8):clamp((relativeBallX-50)*.16,-8,6);
+    base.forEach(function(p){
+      if(p===carrier){p.actionCode=state.lastDecision&&state.lastDecision.p===p?state.lastDecision.code:100;return;}
+      if(!offballDecisionDue(p))return;
+      if(p.role==="GK"){
+        const depth=has?4:clamp(5+Math.max(0,62-relativeBallX)*.12,5,11);
+        const y=clamp(ownGoalY+(relativeBallY-ownGoalY)*.28,24,40);
+        setPlayerTarget(p,world(team,depth,y),402);return;
+      }
+      if(has){
         if(p.role==="F"){
           const lane=p.num%2===0?1:-1;
-          const offsideCap=Math.max(relativeBallX+2,(backLine[1]||96)-1.5);
-          const rx=Math.min(Math.max(p.rx+7,relativeBallX+12+(p.num%3)*2),offsideCap,96);
-          const ry=clamp(relativeBallY+lane*(7+(p.num%3)*1.5),4,60);
-          setPlayerTarget(p,world(team,rx,ry),404);return;
+          const defenderLine=backLine.length>1?backLine[1]:94;
+          const runX=Math.min(Math.max(p.rx+8,relativeBallX+10+(p.num%3)*2),Math.max(relativeBallX+3,defenderLine-2),97);
+          const runY=clamp(relativeBallY+lane*(8+(p.num%3)*3),5,59);
+          setPlayerTarget(p,world(team,runX,runY),404);return;
         }
         if(p.role==="M"){
           const rank=mids.indexOf(p),side=rank%2===0?1:-1;
-          const rx=clamp(relativeBallX+(rank===0?4:7+rank),5,95);
-          const ry=clamp(relativeBallY+side*(rank===0?5:9+rank),4,60);
-          setPlayerTarget(p,world(team,rx,ry),404);return;
+          const supportX=clamp(relativeBallX+(rank===0?5:10+rank*2),p.rx-5,94);
+          const supportY=clamp(relativeBallY+side*(7+rank*3),5,59);
+          setPlayerTarget(p,world(team,supportX,supportY),404);return;
         }
-        const rx=clamp(Math.min(p.rx+11,relativeBallX-9),7,90);
-        const ry=clamp(p.ry*.48+relativeBallY*.52,4,60);
-        setPlayerTarget(p,world(team,rx,ry),402);
-      });
-    }else{
-      const pressCount=$("pressing").value==="always"?3:(relativeBallX<55?2:0);
-      base.forEach(function(p){
-        if(!offballDecisionDue(p))return;
-        if(p.role==="GK"){
-          setPlayerTarget(p,world(team,4,clamp(relativeBallY*.35+32*.65,24,40)),402);return;
+        const rx=clamp(Math.min(p.rx+12,lineDepth-5),8,88);
+        const ry=clamp(p.ry*.56+relativeBallY*.44,5,59);
+        setPlayerTarget(p,world(team,rx+horizontalShift*.35,ry),402);return;
+      }
+      const rank=nearest.findIndex(function(n){return n.p===p;});
+      if(rank>=0&&rank<pressCount){
+        const side=rank===1?-1:rank===2?1:0;
+        const approach={x:carrier.x-dir*(1.8+rank*1.8),y:carrier.y+side*(2.4+rank*1.8)};
+        setPlayerTarget(p,approach,rank===0?422:rank===1?407:400);return;
+      }
+      if(p.role==="D"){
+        const marker=coveragePairs.get(p);
+        if(marker){
+          const goalSideX=marker.x-dir*3.2;
+          const coverY=marker.y+(p.num%2===0?2.8:-2.8);
+          const shape=world(team,clamp(lineDepth-7,10,86),clamp(ownGoalY+(relativeBallY-ownGoalY)*.38,7,57));
+          const point={x:goalSideX*.62+shape.x*.38,y:coverY*.58+shape.y*.42};
+          setPlayerTarget(p,point,407);return;
         }
-        const rank=nearest.findIndex(function(n){return n.p===p;});
-        if(rank>=0&&rank<pressCount){
-          const side=rank===1?-1:rank===2?1:0;
-          setPlayerTarget(p,{x:carrier.x-dir*(1.6+rank*1.5),y:carrier.y+side*(2.2+rank)},rank===0?422:rank===1?407:400);return;
-        }
-        if(p.role==="D"){
-          const marker=coveragePairs.get(p);
-          if(marker){setPlayerTarget(p,{x:marker.x-dir*3.2,y:marker.y+(p.num%2===0?2.5:-2.5)},407);return;}
-        }
-        const side=p.num%2===0?1:-1;
-        setPlayerTarget(p,{x:carrier.x-dir*6.5,y:carrier.y+side*5.5},400);
-      });
-    }
+      }
+      const lane=(p.num%2===0?1:-1)*(p.role==="M"?1:0.72);
+      const roleDepth=p.role==="D"?5:p.role==="M"?15:23;
+      const rx=clamp(Math.min(p.rx+horizontalShift,lineDepth-roleDepth),8,89);
+      const laneY=clamp(ownGoalY+(relativeBallY-ownGoalY)*.52+lane*(p.role==="M"?9:5),5,59);
+      setPlayerTarget(p,world(team,rx,laneY),p.role==="M"?400:402);
+    });
   });
 }
 function predictedBallPoint(f,progress){
