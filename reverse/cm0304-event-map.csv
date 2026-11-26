@@ -11,4 +11,6 @@ code_decimal,code_hex,event_index,event_key,english_ingame_text
 8546,0x2162,546,EVENT_IN_RIGHT_ATTACK,<p1> has the ball on the right wing
 8193,0x2001,193,EVENT_SHOOTOUT_SCORED,GOAL FOR <tc> !
 8196,0x2004,196,EVENT_WIN_THE_SHOOTOUT,<t> win the shootout !!
+8197,0x2005,197,EVENT_NEEDS_TO_SCORE,<p1> must score to keep <t> in the game !
+8198,0x2006,198,EVENT_SCORE_TO_WIN,<t> win if <p1> scores....
 8200,0x2008,200,EVENT_MISSED_IN_SHOOTOUT,But <p1> misses !!
