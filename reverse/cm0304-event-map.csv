@@ -1,0 +1,11 @@
+code_decimal,code_hex,event_index,event_key,english_ingame_text
+8000,0x1F40,0,EVENT_WAIT,<p1> holds up the ball
+8538,0x215A,538,EVENT_IN_LEFT_DEFENCE,<p1> is deep inside his own half
+8539,0x215B,539,EVENT_IN_CENTRAL_DEFENCE,<p1> is deep inside his own half
+8540,0x215C,540,EVENT_IN_RIGHT_DEFENCE,<p1> is deep inside his own half
+8541,0x215D,541,EVENT_IN_LEFT_MIDFIELD,<p1> has the ball on the left of midfield
+8542,0x215E,542,EVENT_IN_CENTRAL_MIDFIELD,<p1> has the ball near the centre circle
+8543,0x215F,543,EVENT_IN_RIGHT_MIDFIELD,<p1> has the ball on the right of midfield
+8544,0x2160,544,EVENT_IN_LEFT_ATTACK,<p1> has the ball on the left wing
+8545,0x2161,545,EVENT_IN_CENTRAL_ATTACK,<p1> is <d> yards from goal
+8546,0x2162,546,EVENT_IN_RIGHT_ATTACK,<p1> has the ball on the right wing
