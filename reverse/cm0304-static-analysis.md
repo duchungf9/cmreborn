@@ -284,6 +284,20 @@ Caller behavior further constrains the scale: `0x906ED0` repeatedly compares thi
 
 The mode byte is behaviorally significant. In the analyzed body, when bit `0x10` is clear, an extra trajectory/validation block runs; bit `0x40` can require a per-sample spatial predicate; bits `0x4` and `0x8` choose additional destination-zone predicates during player-sample evaluation; and `0x82` selects a separate follow-up trajectory path, with bit `0x1` selecting another subpath when `0x82` is clear. These are direct control-flow effects, not tactical labels. The selector's callers pass modes `0`, `4`, `8`, and dynamically assembled combinations, so a faithful port must reproduce caller-specific modes as well as the shared scoring loop.
 
+### Coordinate predicates used by the trajectory evaluator
+
+The mode-selected predicates `0x8EC6B0`, `0x8EC670`, and `0x8EC6F0` are compact Y-coordinate checks against match length and side orientation. Let `H` be player field `+0x78`, `Y` the tested point's Y, and `S` mean match context `+0x5EBC` equals player `+0x6C`:
+
+| Helper | Returns true when | Observed boundary |
+| --- | --- | --- |
+| `0x8EC6B0` | `S: Y > H−300`; otherwise `Y ≤ 299` | 300-unit end band |
+| `0x8EC670` | `S: Y ≤ 299`; otherwise `Y > H−300` | opposite 300-unit end band |
+| `0x8EC6F0` | `S: Y > H−450`; otherwise `Y ≤ 449` | 450-unit end band |
+
+`0x8EC770` adds an end-and-wide-channel predicate: with `S`, it requires `Y > H−150`; without `S`, `Y ≤ 149`. In either orientation it also requires X to lie outside the central band `(119, player[+0x7C]−120]`. These are exact coordinate predicates recovered from the helper bodies; assigning meanings such as “attacking third” or “near-post lane” would need a verified mapping of the pitch axes and team-side field.
+
+This resolves the geometry behind some mode bits in `0x8D2330`: bit `0x4` selects `0x8EC670`; bit `0x8` uses the inverse of `0x8EC6F0` in its corresponding filter branch. `0x8EC6B0` and `0x8EC770` are also consulted elsewhere in the trajectory scoring loop. The demo does not yet apply these native coordinate gates.
+
 One concrete path proposes action `0x66`/102 (`ME_PASS_INTO_AREA`). Under its preceding state, orientation, timing, and occupancy gates, it constructs a target near the forward area, calls `0x8D2330` on the proposal, and combines two bounded random-helper results with that return value. The resulting score is scaled by 250, optionally multiplied by player field `+0xC54` and divided by 20, capped at 100, and only retained if positive and allowed by a match-time gate. The record is copied when the candidate clears the local best-score comparison or the team's `+0x890` flag permits the alternate branch. The random helper's exact distribution, the `+0xC54` field, and the flag semantics remain unknown; it is not enough to port the full action selector.
 
 The other xrefs show wider reuse. `0x906ED0` passes mask `0x4E` with a caller-specific bound and match tick `+8` in two branches, builds a dynamic mask from bits including `0x8`, `0x40`, `0x2`, `0x1`, and `0x4` in another, and uses `0xCE` in a separate branch. It then applies profile-derived threshold and geometric checks. `0x9234A0` assembles mask bits from state, side, and random predicates before asking for a candidate. `0x939D40` also calls the selector in its state-processing flow. These call contexts prove the selector supports several distinct behaviors; the bit names and exact semantics are not yet resolved.
