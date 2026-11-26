@@ -4018,7 +4018,7 @@ function decideWithBall(){
     startFlight(team,"pass",deliveryPoint,target,{intercepted:intercepted,runOnto:runOnto,pressure:pressure,lane:lane,nativeCurveInput:curveInput});
     const runNote=runOnto?"Action 205 now sends the ball into a forward space and makes the passer run onto it. Native selector 0x8FEF30 and heading checks are known; the demo's normalized 12×18 grid mapping and candidate weights are proxies.":"Receiver and passing lane score above the run option.";
     setTrace(p,code,(prototypeCross?"Prototype wide-cross gate selected action 106. The ball uses the recovered native Q14 curve construction; its opaque source field is represented by a demo input.":runNote)+" "+pressureNote,metrics);
-    event(runOnto?playerLabel(p)+' plays into space and runs onto it · '+stateNames[code]+' ['+code]:playerLabel(p)+' passes to '+playerLabel(receiver.p)+' · '+(stateNames[code]||"ME_NORMAL_PASS")+' ['+code],team);
+    event(runOnto?playerLabel(p)+' plays into space and runs onto it · '+stateNames[code]+' ['+code+']':playerLabel(p)+' passes to '+playerLabel(receiver.p)+' · '+(stateNames[code]||"ME_NORMAL_PASS")+' ['+code+']',team);
     updateReadout();return;
   }
   if(pressure>.68&&p.attrs.dribbling<13){
