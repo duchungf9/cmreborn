@@ -489,3 +489,11 @@ Follow-up search found a public behavioral-decompilation repository for CM 01/02
 ### `ME_TURN_ON_BALL` arbitration result (`0x9234A0`)
 
 The selected action-202 arm is now traced through its final writes. After candidate `local_74` wins the shared arbitration (all five candidates above 5 receive independent `Random(10)-5` jitter first), the function stores the player's current x/y as the movement target, sets estimated distance to `-1`, and writes action `0xCA` (`ME_TURN_ON_BALL`). Its movement-mode mask at `+0x8D8` is not one fixed action property: it selects `0x200000` when `0x8FA690` is true; otherwise heading/geometry checks can select `0x100`, `0x80000`, or `0x80`. The angle checks use 40-degree thresholds, with an additional side-relative 21-degree test and a team-instruction/random gate in the final `0x80` versus `0x80000` path. The action also stores `[player+0x9BC] + 10*Random()` in `+0x8C8`. This recovers the dispatch effects and mode-selection branch, not the semantics of the mask bits or the full score-generation logic for `local_74`; the action remains unimplemented in the demo.
+
+### Action-202 (`local_74`) score refinements (`0x9234A0`)
+
+The action-202 candidate is more than a fixed geometry penalty. In the non-suppressed branch around `0x92739C`, a team/player state gate can seed `local_74` to 100 when the 90-degree `0x8BFA00` geometry check fails. If the subsequent possession/context checks permit scoring, the candidate can be raised to 100 when below 101. Another branch computes a comparison threshold
+
+`T = (300 - local_b8) * 10 - (max(local_98, floor(local_c8/500)) * local_c8) / (10 * FUN_008FC760() + 5) - local_a4`
+
+and replaces `local_74` with `T` only when the current score is no greater. Later shared adjustments can add 50 or 100 to positive candidates, force a value of 2 in the 300-unit end band, or floor it at 200 under a separate gate; the randomized `-5..+4` arbitration perturbation still follows. These are exact native integer operations and their surrounding decompiler predicates, but locals `local_b8`, `local_98`, `local_c8`, `local_a4` and helper `0x8FC760` remain semantically unnamed, and other entry branches can retain the initial `-100`. Thus this narrows the score-generation unknown without establishing a complete `ME_TURN_ON_BALL` formula.
