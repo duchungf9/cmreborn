@@ -1,5 +1,13 @@
 # Championship Manager 03/04: static match-engine notes
 
+## Public research cross-check (2026-11-26)
+
+An internet search for prior CM 03/04 match-engine reverse engineering did **not** find a published source-level reconstruction. The useful public material found is design guidance rather than code: a contemporary community FAQ says attributes interact (its example combines vision and long shots for a chip) and that off-the-ball movement affects marking/shot opportunities, while pressure and bravery also alter contested outcomes. A later player guide claims physical attributes are weighted strongly, but this is anecdotal and is not a recovered formula. These statements are useful hypotheses to compare against native call graphs; they do not justify raising the reverse percentage.
+
+The detailed public reverse-engineering article located is for **CM 01/02**, a different executable and engine version. Its exact grid dimensions, tick cadence, candidate weights, and numeric formulas must not be copied into this CM 03/04 reconstruction. Search results for current fan patches describe database/UI changes and faster 2D playback, not source-level match-engine recovery. The faster path remains to use the public guides to prioritize candidate attributes, then verify each dependency in this executable and in runtime traces.
+
+Sources: [CM 03/04 community FAQ, sections 3.9.6–3.9.7](https://forums.operationsports.com/fofc/showthread.php?p=3255255); [CM 03/04 player guide, attribute discussion](https://gamefaqs.gamespot.com/pc/918869-championship-manager-season-03-04/faqs/81791); [CM 01/02 code-based reverse engineering (different version)](https://cm0102reborn.com/cm-01-02-match-engine/).
+
 ## Scope and target
 
 These are partial static observations from the user-provided Windows release. The inspected executable is PE32 x86, version 4.1.0.0, SHA-256 `f5963ebd6c9df918b9e630402a3bed6a64357f7ff62b9a6d2a6b5d5234bd9b7a`. Addresses below are virtual addresses from the executable image. They have not been validated against other releases.
